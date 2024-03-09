@@ -136,7 +136,7 @@ class SWAEBatchTrainer:
         x = x.to(self._device)
         recon_x, z = self.model_(x)
         # mutual information reconstruction loss
-        bce = F.binary_cross_entropy(recon_x, x)
+        bce = F.cross_entropy(recon_x, x)
         # for explaination of additional L1 loss see references in README.md
         # high lvl summary prevents variance collapse on latent variables
         l1 = F.l1_loss(recon_x, x)
