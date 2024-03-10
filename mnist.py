@@ -11,7 +11,7 @@ from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
-
+from swae.dataloader import *
 
 def main():
     # train args
@@ -55,27 +55,18 @@ def main():
     print('batch size {}\nepochs {}\nRMSprop lr {} alpha {}\ndistribution {}\nusing device {}\nseed set to {}'.format(
         args.batch_size, args.epochs, args.lr, args.alpha, args.distribution, device.type, args.seed
     ))
+
+
     # build train and test set data loaders
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(args.datadir, train=True, download=True,
-                       transform=transforms.Compose([
-                            transforms.ToTensor(),
-                            transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.batch_size, shuffle=True, **dataloader_kwargs)
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(args.datadir, train=False, download=True,
-                       transform=transforms.Compose([
-                            transforms.ToTensor(),
-                            transforms.Normalize((0.1307,), (0.3081,))
-                        ])),
-        batch_size=64, shuffle=False, **dataloader_kwargs)
+    train_loader, test_loader = MNISTDataLoader(train_batch_size=args.batch_size)
+
+
     # create encoder and decoder
     model = MNISTAutoencoder().to(device)
     print(model)
     # create optimizer
-    # matching default Keras args for RMSprop
     optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
+
     # determine latent distribution
     if args.distribution == 'circle':
         distribution_fn = rand_cirlce2d
@@ -83,10 +74,12 @@ def main():
         distribution_fn = rand_ring2d
     else:
         distribution_fn = rand_uniform2d
+
     # create batch sliced_wasserstein autoencoder trainer
-    trainer = SWAEBatchTrainer(model, optimizer, distribution_fn, device=device)
+    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer, num_classes=10, distribution_fn=distribution_fn, device=device)
     # put networks in training mode
     model.train()
+
     # train networks for n epochs
     print('training...')
     for epoch in range(args.epochs):
@@ -94,7 +87,7 @@ def main():
             trainer.weight *= 1.1
         # train autoencoder on train dataset
         for batch_idx, (x, y) in enumerate(train_loader, start=0):
-            batch = trainer.train_on_batch(x)
+            batch = trainer.train_on_batch(x, y)
             if (batch_idx + 1) % args.log_interval == 0:
                 print('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}'.format(
                         epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
@@ -104,7 +97,7 @@ def main():
         test_encode, test_targets, test_loss = list(), list(), 0.0
         with torch.no_grad():
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                test_evals = trainer.test_on_batch(x_test)
+                test_evals = trainer.test_on_batch(x_test, y_test)
                 test_encode.append(test_evals['encode'].detach())
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
