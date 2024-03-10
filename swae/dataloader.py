@@ -31,7 +31,7 @@ class MNISTDataLoader():
                                   ]))
         self.test_dataset = test_set
 
-    def create_train_dataloader(self):
+    def create_dataloader(self):
         instances_indices = torch.arange(len(self.train_dataset.targets))
         all_classes_indices = list()
         for i in range(self.num_classes):
