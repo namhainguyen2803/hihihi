@@ -173,7 +173,7 @@ def FEBSW_list(Xs,X,L=10,p=2,device='cpu',reduce='max',energy='max'):
     elif(reduce=='mean'):
         return torch.mean(sws)
 
-def rand_projections(embedding_dim, num_samples=50):
+def rand_projection(embedding_dim, num_samples=50):
     """This function generates `num_samples` random samples from the latent space's unit sphere.
 
         Args:
@@ -208,7 +208,7 @@ def _sliced_wasserstein_distance(encoded_samples,
     # derive latent space dimension size from random samples drawn from latent prior distribution
     embedding_dim = distribution_samples.size(1)
     # generate random projections in latent space
-    projections = rand_projections(embedding_dim, num_projections).to(device)
+    projections = rand_projection(embedding_dim, num_projections).to(device)
     # calculate projections through the encoded samples
     encoded_projections = encoded_samples.matmul(projections.transpose(0, 1))
     # calculate projections through the prior distribution random samples
