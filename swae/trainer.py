@@ -67,7 +67,7 @@ class SWAEBatchTrainer:
         for cls in range(self.num_classes):
             list_z.append(z[y == cls])
 
-        fsw = FEBSW_list(list_z, z)
+        fsw = FEBSW_list(Xs=list_z, X=z, device=self._device)
         w2 = float(self.weight) * _swd
         loss = bce + fsw + w2
 

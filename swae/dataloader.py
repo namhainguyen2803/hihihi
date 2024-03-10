@@ -3,6 +3,7 @@ from torchvision import datasets, transforms
 import torch
 from torch.utils.data import DataLoader
 
+
 class MNISTDataLoader():
     def __init__(self, data_dir="data/", train_batch_size=64, test_batch_size=64):
         self.test_loader = None
@@ -16,7 +17,6 @@ class MNISTDataLoader():
         self.num_classes = 10
 
     def create_dataset(self):
-
         train_set = datasets.MNIST(self.data_dir + "train/", train=True, download=True,
                                    transform=transforms.Compose([
                                        transforms.ToTensor(),
@@ -25,10 +25,10 @@ class MNISTDataLoader():
         self.train_dataset = train_set
 
         test_set = datasets.MNIST(self.data_dir + "test/", train=False, download=True,
-                                   transform=transforms.Compose([
-                                        transforms.ToTensor(),
-                                        transforms.Normalize((0.1307,), (0.3081,))
-                                    ]))
+                                  transform=transforms.Compose([
+                                      transforms.ToTensor(),
+                                      transforms.Normalize((0.1307,), (0.3081,))
+                                  ]))
         self.test_dataset = test_set
 
     def create_train_dataloader(self):
@@ -48,6 +48,6 @@ class MNISTDataLoader():
 
         self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
 
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
+        self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
 
         return self.train_loader, self.test_loader
