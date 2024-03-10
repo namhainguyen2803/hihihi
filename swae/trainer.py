@@ -64,7 +64,7 @@ class SWAEBatchTrainer:
         for cls in range(self.num_classes):
             z_cls = z[y == cls]
             list_z.append(z_cls)
-            z_sample = self._distribution_fn(batch_size).to(self._device)
+            z_sample = self._distribution_fn(z_cls.shape[0]).to(self._device)
             dis = ssliced_wasserstein_distance(encoded_samples=z_cls, distribution_samples=z_sample, device=self._device)
             wasserstein_distances[cls] = dis
 
