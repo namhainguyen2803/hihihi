@@ -58,7 +58,8 @@ def main():
 
 
     # build train and test set data loaders
-    train_loader, test_loader = MNISTDataLoader(train_batch_size=args.batch_size)
+    data_loader = MNISTDataLoader(train_batch_size=args.batch_size)
+    train_loader, test_loader = data_loader
 
 
     # create encoder and decoder
