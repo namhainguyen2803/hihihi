@@ -188,7 +188,7 @@ def rand_projection(embedding_dim, num_samples=50):
     projections = np.asarray(projections)
     return torch.from_numpy(projections).type(torch.FloatTensor)
 
-def _sliced_wasserstein_distance(encoded_samples,
+def ssliced_wasserstein_distance(encoded_samples,
                                  distribution_samples,
                                  num_projections=50,
                                  p=2,
@@ -249,6 +249,6 @@ def sliced_wasserstein_distance(encoded_samples,
     z = distribution_fn(batch_size).to(device)
     # approximate mean wasserstein_distance between encoded and prior distributions
     # for each random projection
-    swd = _sliced_wasserstein_distance(encoded_samples, z,
+    swd = ssliced_wasserstein_distance(encoded_samples, z,
                                        num_projections, p, device)
     return swd
