@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from swae.utils import *
 from swae.distributions import rand_cirlce2d
-
+from swae.utils import *
 
 
 class SWAEBatchTrainer:
@@ -49,7 +49,39 @@ class SWAEBatchTrainer:
         # reset gradients
         self.optimizer.zero_grad()
         # autoencoder forward pass and loss
-        return self.eval_on_batch(x, y)
+        x = x.to(self._device)
+        y = y.to(self._device)
+        recon_x, z = self.model_(x)
+        bce = F.cross_entropy(recon_x, x)
+        _swd = sliced_wasserstein_distance(z, self._distribution_fn,
+                                           self.num_projections_, self.p_,
+                                           self._device)
+        list_z = list()
+
+        batch_size = x.size(0)
+
+        wasserstein_distances = dict()
+        for cls in range(self.num_classes):
+            z_cls = z[y == cls]
+            list_z.append(z_cls)
+            z = self._distribution_fn(batch_size).to(self._device)
+            dis = ssliced_wasserstein_distance(encoded_samples=z_cls, distribution_samples=z, device=self._device)
+            wasserstein_distances[cls] = dis
+
+        z = self._distribution_fn(batch_size).to(self._device)
+        fsw = FEBSW_list(Xs=list_z, X=z, device=self._device)
+        w2 = float(self.weight) * _swd
+        loss = bce + fsw + w2
+
+        return {
+            'loss': loss,
+            'bce': bce,
+            'FairSW': fsw,
+            'w2': w2,
+            'encode': z,
+            'decode': recon_x,
+            'wasserstein_distances': wasserstein_distances
+        }
 
     def eval_on_batch(self, x, y):
         x = x.to(self._device)
