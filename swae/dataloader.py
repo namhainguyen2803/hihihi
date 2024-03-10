@@ -48,6 +48,12 @@ class MNISTDataLoader():
 
         self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
 
+        instances_indices = torch.arange(len(self.test_dataset.targets))
+        all_classes_indices = list()
+        for i in range(self.num_classes):
+            class_index = instances_indices[self.test_dataset.targets == i]
+            all_classes_indices.append(class_index)
+
         test_batch_sampler = SamplerFactory().get(
             class_idxs=all_classes_indices,
             batch_size=self.test_batch_size,
