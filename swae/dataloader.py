@@ -48,6 +48,16 @@ class MNISTDataLoader():
 
         self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
 
-        self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
+        test_batch_sampler = SamplerFactory().get(
+            class_idxs=all_classes_indices,
+            batch_size=self.test_batch_size,
+            n_batches=250,
+            alpha=1,
+            kind='fixed'
+        )
+
+        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler)
+
+        # self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
 
         return self.train_loader, self.test_loader
