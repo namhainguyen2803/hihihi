@@ -72,6 +72,12 @@ def main():
         optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
     elif args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    elif args.optimizer == 'adamax':
+        optimizer = optim.Adamax(model.parameters(), lr=args.lr)
+    elif args.optimizer == 'adamW':
+        optimizer = optim.AdamW(model.parameters(), lr=args.lr)
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=args.lr)
 
 
     # determine latent distribution

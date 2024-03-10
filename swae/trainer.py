@@ -48,7 +48,7 @@ class SWAEBatchTrainer:
         return evals
 
     def test_on_batch(self, x, y):
-        with torch.no_grad:
+        with torch.no_grad():
 
             x = x.to(self._device)
             y = y.to(self._device)
