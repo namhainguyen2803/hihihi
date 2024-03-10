@@ -105,15 +105,17 @@ def main():
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
 
-                for cls_id, ws_dist in test_evals["wasserstein_distances"].items:
+                for cls_id, ws_dist in test_evals["wasserstein_distances"].items():
                     posterior_gap[cls_id] += ws_dist
-                    num_ins[cls_id] += x_test[y_test == cls_id]
+                    num_ins[cls_id] += x_test[y_test == cls_id].shape[0]
 
         avg_gap = [0 for _ in range(data_loader.num_classes)]
-        for cls_id in range(len(data_loader.num_classes)):
+        for cls_id in range(data_loader.num_classes):
             avg_gap[cls_id] = posterior_gap[cls_id] / num_ins[cls_id]
 
+        print("Sliced Wasserstein gap of prior distribution and posterior distribution of each class:")
         print(avg_gap)
+        print()
 
         test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
         test_loss /= len(test_loader)
