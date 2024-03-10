@@ -28,6 +28,8 @@ def main():
                         help='RMSprop alpha/rho (default: 0.9)')
     parser.add_argument('--distribution', type=str, default='circle', metavar='DIST',
                         help='Latent Distribution (default: circle)')
+    parser.add_argument('--optimizer', type=str, default='rmsprop',
+                        help='Optimizer (default: rmsprop)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--num-workers', type=int, default=8, metavar='N',
@@ -66,7 +68,11 @@ def main():
     model = MNISTAutoencoder().to(device)
     print(model)
     # create optimizer
-    optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
+    if args.optimizer == 'rmsprop':
+        optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
+    elif args.optimizer == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=args.lr)
+
 
     # determine latent distribution
     if args.distribution == 'circle':
