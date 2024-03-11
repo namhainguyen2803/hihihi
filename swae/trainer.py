@@ -31,7 +31,7 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight_fsw = 0.0001
+        self.weight_fsw = 0.0
 
     def __call__(self, x):
         return self.eval_on_batch(x)
@@ -58,10 +58,11 @@ class SWAEBatchTrainer:
             batch_size = x.size(0)
             z_prior = self._distribution_fn(batch_size).to(self._device)
 
-            _swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
+            l1 = F.l1_loss(recon_x, x)
+
+            swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
                                                num_projections=self.num_projections_, p=self.p_,
                                                device=self._device)
-            w2 = float(self.weight) * _swd
 
             list_z = list()
             wasserstein_distances = dict()
@@ -76,13 +77,13 @@ class SWAEBatchTrainer:
 
             fsw = FEFBSW_list(Xs=list_z, X=z_prior, device=self._device)
 
-            loss = bce + fsw + w2
+            loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd + l1
 
             return {
                 'loss': loss,
                 'bce': bce,
                 'FairSW': fsw,
-                'w2': w2,
+                'w2': swd,
                 'encode': z_posterior,
                 'decode': recon_x,
                 'wasserstein_distances': wasserstein_distances
