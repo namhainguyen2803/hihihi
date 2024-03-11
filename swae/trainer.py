@@ -31,7 +31,7 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight_fsw = 0.1
+        self.weight_fsw = 0.0001
 
     def __call__(self, x):
         return self.eval_on_batch(x)
@@ -111,7 +111,7 @@ class SWAEBatchTrainer:
 
         fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, device=self._device)
 
-        loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd+ l1
+        loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd + l1
 
         return {
             'loss': loss,
