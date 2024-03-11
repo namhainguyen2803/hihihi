@@ -96,6 +96,8 @@ class SWAEBatchTrainer:
         recon_x, z_posterior = self.model_(x)
         bce = F.cross_entropy(recon_x, x)
 
+        l1 = F.l1_loss(recon_x, x)
+
         batch_size = x.size(0)
         z_prior = self._distribution_fn(batch_size).to(self._device)
 
@@ -109,7 +111,7 @@ class SWAEBatchTrainer:
 
         fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, device=self._device)
 
-        loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd
+        loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd+ l1
 
         return {
             'loss': loss,
@@ -117,5 +119,6 @@ class SWAEBatchTrainer:
             'FairSW': fsw,
             'w2': swd,
             'encode': z_posterior,
-            'decode': recon_x
+            'decode': recon_x,
+            'l1': l1
         }
