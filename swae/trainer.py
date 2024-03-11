@@ -31,7 +31,7 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight_fsw = 1
+        self.weight_fsw = 0.1
 
     def __call__(self, x):
         return self.eval_on_batch(x)
@@ -74,7 +74,7 @@ class SWAEBatchTrainer:
                                                      device=self._device)
                 wasserstein_distances[cls] = ws_dist
 
-            fsw = FEBSW_list(Xs=list_z, X=z_prior, device=self._device)
+            fsw = FEFBSW_list(Xs=list_z, X=z_prior, device=self._device)
 
             loss = bce + fsw + w2
 
@@ -107,7 +107,7 @@ class SWAEBatchTrainer:
         for cls in range(self.num_classes):
             list_z_posterior.append(z_posterior[y == cls])
 
-        fsw = FEBSW_list(Xs=list_z_posterior, X=z_prior, device=self._device)
+        fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, device=self._device)
 
         loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd
 
