@@ -100,7 +100,7 @@ def main():
             trainer.weight *= 1.1
         # train autoencoder on train dataset
         for batch_idx, (x, y) in enumerate(train_loader, start=0):
-            batch = trainer.train_on_batch(x, y)
+            batch = trainer.train_on_batch(x)
             if (batch_idx + 1) % args.log_interval == 0:
                 print('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}'.format(
                         epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
@@ -108,31 +108,17 @@ def main():
                         batch['loss'].item()))
         # evaluate autoencoder on test dataset
         test_encode, test_targets, test_loss = list(), list(), 0.0
-        posterior_gap = [0 for _ in range(data_loader.num_classes)]
-        num_ins = [0 for _ in range(data_loader.num_classes)]
+
         with torch.no_grad():
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                test_evals = trainer.test_on_batch(x_test, y_test)
+                test_evals = trainer.test_on_batch(x_test)
                 test_encode.append(test_evals['encode'].detach())
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
 
-                for cls_id, ws_dist in test_evals["wasserstein_distances"].items():
-                    posterior_gap[cls_id] += ws_dist
-                    num_ins[cls_id] += x_test[y_test == cls_id].shape[0]
-
-        avg_gap = [0 for _ in range(data_loader.num_classes)]
-        for cls_id in range(data_loader.num_classes):
-            avg_gap[cls_id] = posterior_gap[cls_id] / num_ins[cls_id]
-
-        print("Sliced Wasserstein gap of prior distribution and posterior distribution of each class:")
-        print(avg_gap)
-        print()
-
         test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
-        
+
         print(f"test_encode: {test_encode.shape}")
-        print(test_encode)
 
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(

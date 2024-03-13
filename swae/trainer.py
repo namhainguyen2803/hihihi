@@ -32,94 +32,46 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight_fsw = 0.0
-
     def __call__(self, x):
         return self.eval_on_batch(x)
 
-    def train_on_batch(self, x, y):
+    def train_on_batch(self, x):
         # reset gradients
         self.optimizer.zero_grad()
         # autoencoder forward pass and loss
-        evals = self.eval_on_batch(x, y)
+        evals = self.eval_on_batch(x)
         # backpropagate loss
         evals['loss'].backward()
         # update encoder and decoder parameters
         self.optimizer.step()
         return evals
 
-    def test_on_batch(self, x, y):
-        with torch.no_grad():
-            x = x.to(self._device)
-            y = y.to(self._device)
-            recon_x, z_posterior = self.model_(x)
-            bce = F.cross_entropy(recon_x, x)
+    def test_on_batch(self, x):
+        # reset gradients
+        self.optimizer.zero_grad()
+        # autoencoder forward pass and loss
+        evals = self.eval_on_batch(x)
+        return evals
 
-            batch_size = x.size(0)
-            z_prior = self._distribution_fn(batch_size).to(self._device)
-
-            l1 = F.l1_loss(recon_x, x)
-
-            swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
-                                              num_projections=self.num_projections_, p=self.p_,
-                                              device=self._device)
-
-            list_z = list()
-            wasserstein_distances = dict()
-            for cls in range(self.num_classes):
-                z_cls = z_posterior[y == cls]
-                list_z.append(z_cls)
-                z_sample = self._distribution_fn(z_cls.shape[0]).to(self._device)
-                ws_dist = sliced_wasserstein_distance(encoded_samples=z_cls, distribution_samples=z_sample,
-                                                      num_projections=self.num_projections_, p=self.p_,
-                                                      device=self._device)
-                wasserstein_distances[cls] = ws_dist
-
-            fsw = FEFBSW_list(Xs=list_z, X=z_prior, device=self._device)
-
-            loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd + l1
-
-            return {
-                'loss': loss,
-                'bce': bce,
-                'FairSW': fsw,
-                'w2': swd,
-                'encode': z_posterior,
-                'decode': recon_x,
-                'wasserstein_distances': wasserstein_distances
-            }
-
-    def eval_on_batch(self, x, y):
-
+    def eval_on_batch(self, x):
         x = x.to(self._device)
-        y = y.to(self._device)
-
-        recon_x, z_posterior = self.model_(x)
+        recon_x, z = self.model_(x)
+        # mutual information reconstruction loss
         bce = F.cross_entropy(recon_x, x)
-
+        # for explaination of additional L1 loss see references in README.md
+        # high lvl summary prevents variance collapse on latent variables
         l1 = F.l1_loss(recon_x, x)
-
-        batch_size = x.size(0)
-        z_prior = self._distribution_fn(batch_size).to(self._device)
-
-        swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
-                                          num_projections=self.num_projections_, p=self.p_,
-                                          device=self._device)
-
-        list_z_posterior = list()
-        for cls in range(self.num_classes):
-            list_z_posterior.append(z_posterior[y == cls])
-
-        fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, device=self._device)
-
-        loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd + l1
-
+        # divergence on transformation plane from X space to Z space to match prior
+        _swd = sliced_wasserstein_distance(z, self._distribution_fn,
+                                           self.num_projections_, self.p_,
+                                           self._device)
+        w2 = float(self.weight) * _swd  # approximate wasserstein-2 distance
+        loss = bce + l1 + w2
         return {
             'loss': loss,
             'bce': bce,
-            'FairSW': fsw,
-            'w2': swd,
-            'encode': z_posterior,
-            'decode': recon_x,
-            'l1': l1
+            'l1': l1,
+            'w2': w2,
+            'encode': z,
+            'decode': recon_x
         }
