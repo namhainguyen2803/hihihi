@@ -130,6 +130,10 @@ def main():
         print()
 
         test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
+        
+        print(f"test_encode: {test_encode.shape}")
+        print(test_encode)
+
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
                 epoch + 1, float(epoch + 1) / (args.epochs) * 100.,

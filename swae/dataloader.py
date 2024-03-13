@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 
 class MNISTDataLoader():
-    def __init__(self, data_dir="data/", train_batch_size=64, test_batch_size=64):
+    def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250):
         self.test_loader = None
         self.train_loader = None
         self.train_dataset = None
@@ -41,7 +41,7 @@ class MNISTDataLoader():
         batch_sampler = SamplerFactory().get(
             class_idxs=all_classes_indices,
             batch_size=self.train_batch_size,
-            n_batches=250,
+            n_batches=len(self.train_dataset.targets) // self.train_batch_size,
             alpha=1,
             kind='fixed'
         )
@@ -57,7 +57,7 @@ class MNISTDataLoader():
         test_batch_sampler = SamplerFactory().get(
             class_idxs=all_classes_indices,
             batch_size=self.test_batch_size,
-            n_batches=250,
+            n_batches=len(self.test_dataset.targets) // self.test_batch_size,
             alpha=1,
             kind='fixed'
         )
