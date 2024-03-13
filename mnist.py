@@ -154,7 +154,7 @@ def main():
         plt.close()
         # save sample input and reconstruction
         vutils.save_image(x, '{}/test_samples_epoch_{}.png'.format(imagesdir, epoch + 1))
-        print(batch['decode'].detach())
+        # print(batch['decode'].detach())
         vutils.save_image(batch['decode'].detach(),
                           '{}/test_reconstructions_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
