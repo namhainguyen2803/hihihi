@@ -56,6 +56,7 @@ class SWAEBatchTrainer:
     def eval_on_batch(self, x):
         x = x.to(self._device)
         recon_x, z_posterior = self.model_(x)
+        print(x)
         bce = F.binary_cross_entropy(recon_x, x)
 
         l1 = F.l1_loss(recon_x, x)
