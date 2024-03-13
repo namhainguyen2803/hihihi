@@ -66,17 +66,17 @@ def main():
 
     # build train and test set data loaders
     train_loader = DataLoader(
-        datasets.MNIST(args.datadir, train=True, download=True,
+        datasets.MNIST(args.datadir+"/train", train=True, download=True,
                        transform=transforms.Compose([
                             transforms.ToTensor(),
-                            transforms.Normalize((0.1307,), (0.3081,))
+                            # transforms.Normalize((0.1307,), (0.3081,))
                        ])),
         batch_size=args.batch_size, shuffle=True, **dataloader_kwargs)
     test_loader = DataLoader(
-        datasets.MNIST(args.datadir, train=False, download=True,
+        datasets.MNIST(args.datadir+"/test", train=False, download=True,
                        transform=transforms.Compose([
                             transforms.ToTensor(),
-                            transforms.Normalize((0.1307,), (0.3081,))
+                            # transforms.Normalize((0.1307,), (0.3081,))
                         ])),
         batch_size=args.batch_size, shuffle=False, **dataloader_kwargs)
 
