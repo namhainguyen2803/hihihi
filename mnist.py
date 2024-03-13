@@ -155,8 +155,7 @@ def main():
         # save sample input and reconstruction
         vutils.save_image(x, '{}/test_samples_epoch_{}.png'.format(imagesdir, epoch + 1))
         vutils.save_image(batch['decode'].detach(),
-                          '{}/test_reconstructions_epoch_{}.png'.format(imagesdir, epoch + 1),
-                          normalize=True)
+                          '{}/test_reconstructions_epoch_{}.png'.format(imagesdir, epoch + 1))
 
 
 if __name__ == '__main__':
