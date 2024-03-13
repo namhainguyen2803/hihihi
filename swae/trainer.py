@@ -55,23 +55,24 @@ class SWAEBatchTrainer:
 
     def eval_on_batch(self, x):
         x = x.to(self._device)
-        recon_x, z = self.model_(x)
-        # mutual information reconstruction loss
+        recon_x, z_posterior = self.model_(x)
         bce = F.cross_entropy(recon_x, x)
-        # for explaination of additional L1 loss see references in README.md
-        # high lvl summary prevents variance collapse on latent variables
+
         l1 = F.l1_loss(recon_x, x)
-        # divergence on transformation plane from X space to Z space to match prior
-        _swd = sliced_wasserstein_distance(z, self._distribution_fn,
-                                           self.num_projections_, self.p_,
-                                           self._device)
-        w2 = float(self.weight) * _swd  # approximate wasserstein-2 distance
-        loss = bce + l1 + w2
+
+        batch_size = x.size(0)
+        z_prior = self._distribution_fn(batch_size).to(self._device)
+
+        swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
+                                          num_projections=self.num_projections_, p=self.p_,
+                                          device=self._device)
+
+        loss = bce + float(self.weight) * swd + l1
         return {
             'loss': loss,
             'bce': bce,
             'l1': l1,
-            'w2': w2,
-            'encode': z,
+            'w2': swd,
+            'encode': z_posterior,
             'decode': recon_x
         }
