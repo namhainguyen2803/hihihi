@@ -19,6 +19,7 @@ class SWAEBatchTrainer:
             weight (float): weight of divergence metric compared to reconstruction in loss
             device (torch.Device): torch device
     """
+
     def __init__(self, autoencoder, optimizer, distribution_fn, num_classes=10,
                  num_projections=50, p=2, weight=10, device=None):
         self.model_ = autoencoder
@@ -49,7 +50,6 @@ class SWAEBatchTrainer:
 
     def test_on_batch(self, x, y):
         with torch.no_grad():
-
             x = x.to(self._device)
             y = y.to(self._device)
             recon_x, z_posterior = self.model_(x)
@@ -61,8 +61,8 @@ class SWAEBatchTrainer:
             l1 = F.l1_loss(recon_x, x)
 
             swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
-                                               num_projections=self.num_projections_, p=self.p_,
-                                               device=self._device)
+                                              num_projections=self.num_projections_, p=self.p_,
+                                              device=self._device)
 
             list_z = list()
             wasserstein_distances = dict()
@@ -71,8 +71,8 @@ class SWAEBatchTrainer:
                 list_z.append(z_cls)
                 z_sample = self._distribution_fn(z_cls.shape[0]).to(self._device)
                 ws_dist = sliced_wasserstein_distance(encoded_samples=z_cls, distribution_samples=z_sample,
-                                                     num_projections=self.num_projections_, p=self.p_,
-                                                     device=self._device)
+                                                      num_projections=self.num_projections_, p=self.p_,
+                                                      device=self._device)
                 wasserstein_distances[cls] = ws_dist
 
             fsw = FEFBSW_list(Xs=list_z, X=z_prior, device=self._device)
@@ -103,8 +103,8 @@ class SWAEBatchTrainer:
         z_prior = self._distribution_fn(batch_size).to(self._device)
 
         swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
-                                           num_projections=self.num_projections_, p=self.p_,
-                                           device=self._device)
+                                          num_projections=self.num_projections_, p=self.p_,
+                                          device=self._device)
 
         list_z_posterior = list()
         for cls in range(self.num_classes):
