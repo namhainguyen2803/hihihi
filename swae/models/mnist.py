@@ -11,6 +11,7 @@ class MNISTEncoder(nn.Module):
             inter_fc_dim (int): intermediate fully connected dimensionality prior to embedding layer
             embedding_dim (int): embedding dimensionality
     """
+
     def __init__(self, init_num_filters=16, lrelu_slope=0.2, inter_fc_dim=128, embedding_dim=2):
         super(MNISTEncoder, self).__init__()
 
@@ -64,6 +65,7 @@ class MNISTDecoder(nn.Module):
             inter_fc_dim (int): intermediate fully connected dimensionality prior to embedding layer
             embedding_dim (int): embedding dimensionality
     """
+
     def __init__(self, init_num_filters=16, lrelu_slope=0.2, inter_fc_dim=128, embedding_dim=2):
         super(MNISTDecoder, self).__init__()
 
@@ -119,6 +121,7 @@ class MNISTAutoencoder(nn.Module):
             inter_fc_dim (int): intermediate fully connected dimensionality prior to embedding layer
             embedding_dim (int): embedding dimensionality
     """
+
     def __init__(self, init_num_filters=16, lrelu_slope=0.2, inter_fc_dim=128, embedding_dim=2):
         super(MNISTAutoencoder, self).__init__()
 
@@ -133,5 +136,6 @@ class MNISTAutoencoder(nn.Module):
     def forward(self, x):
         z = self.encoder(x)
         return self.decoder(z), z
+
     def generate(self, z):
         return self.decoder(z)

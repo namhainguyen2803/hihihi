@@ -11,26 +11,31 @@ def quantile_function(qs, cws, xs):
     qs = qs.T.contiguous()
     idx = torch.searchsorted(cws, qs, right=False).T
     return torch.gather(xs, 0, torch.clamp(idx, 0, n - 1))
-def compute_true_Wasserstein(X,Y,p=2):
+
+
+def compute_true_Wasserstein(X, Y, p=2):
     M = ot.dist(X.detach().numpy(), Y.detach().numpy())
     a = np.ones((X.shape[0],)) / X.shape[0]
     b = np.ones((Y.shape[0],)) / Y.shape[0]
     return ot.emd2(a, b, M)
-def compute_Wasserstein(M,device='cpu',e=0):
-    if(e==0):
-        pi = ot.emd([],[],M.cpu().detach().numpy()).astype('float32')
-    else:
-        pi = ot.sinkhorn([], [], M.cpu().detach().numpy(),reg=e).astype('float32')
-    pi = torch.from_numpy(pi).to(device)
-    return torch.sum(pi*M)
 
-def rand_projections(dim, num_projections=1000,device='cpu'):
-    projections = torch.randn((num_projections, dim),device=device)
+
+def compute_Wasserstein(M, device='cpu', e=0):
+    if (e == 0):
+        pi = ot.emd([], [], M.cpu().detach().numpy()).astype('float32')
+    else:
+        pi = ot.sinkhorn([], [], M.cpu().detach().numpy(), reg=e).astype('float32')
+    pi = torch.from_numpy(pi).to(device)
+    return torch.sum(pi * M)
+
+
+def rand_projections(dim, num_projections=1000, device='cpu'):
+    projections = torch.randn((num_projections, dim), device=device)
     projections = projections / torch.sqrt(torch.sum(projections ** 2, dim=1, keepdim=True))
     return projections
 
 
-def one_dimensional_Wasserstein_prod(X,Y,theta,p):
+def one_dimensional_Wasserstein_prod(X, Y, theta, p):
     X_prod = torch.matmul(X, theta.transpose(0, 1))
     Y_prod = torch.matmul(Y, theta.transpose(0, 1))
     X_prod = X_prod.view(X_prod.shape[0], -1)
@@ -41,12 +46,13 @@ def one_dimensional_Wasserstein_prod(X,Y,theta,p):
                 - torch.sort(Y_prod, dim=0)[0]
         )
     )
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=0,keepdim=True)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=0, keepdim=True)
     return wasserstein_distance
 
-def one_dimensional_Wasserstein(X, Y,theta, u_weights=None, v_weights=None, p=2):
+
+def one_dimensional_Wasserstein(X, Y, theta, u_weights=None, v_weights=None, p=2):
     if (X.shape[0] == Y.shape[0] and u_weights is None and v_weights is None):
-        return one_dimensional_Wasserstein_prod(X,Y,theta,p)
+        return one_dimensional_Wasserstein_prod(X, Y, theta, p)
     u_values = torch.matmul(X, theta.transpose(0, 1))
     v_values = torch.matmul(Y, theta.transpose(0, 1))
     n = u_values.shape[0]
@@ -88,182 +94,192 @@ def one_dimensional_Wasserstein(X, Y,theta, u_weights=None, v_weights=None, p=2)
     diff_quantiles = torch.abs(u_quantiles - v_quantiles)
     return torch.sum(delta * torch.pow(diff_quantiles, p), dim=0)
 
-def BSW(Xs,X,L=10,p=2,device='cpu'):
+
+def BSW(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     theta = rand_projections(dim, L, device)
     Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
     X_prod = torch.matmul(X, theta.transpose(0, 1))
-    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
+    Xs_prod_sorted = torch.sort(Xs_prod, dim=1)[0]
     X_prod_sorted = torch.sort(X_prod, dim=0)[0]
-    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
-    sw = torch.mean(wasserstein_distance,dim=1)
+    wasserstein_distance = torch.abs(Xs_prod_sorted - X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)  # K\times L
+    sw = torch.mean(wasserstein_distance, dim=1)
     return torch.mean(sw)
 
-def BSW_list(Xs,X,L=10,p=2,device='cpu'):
+
+def BSW_list(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     K = len(Xs)
     theta = rand_projections(dim, L, device)
-    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i],X,theta,p=p) for i in range(K)]
-    wasserstein_distance = torch.stack(wasserstein_distance,dim=0)
-    sw = torch.mean(wasserstein_distance,dim=1)
+    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta, p=p) for i in range(K)]
+    wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
+    sw = torch.mean(wasserstein_distance, dim=1)
     return torch.mean(sw)
 
-def lowerboundFBSW(Xs,X,L=10,p=2,device='cpu'):
+
+def lowerboundFBSW(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     theta = rand_projections(dim, L, device)
     Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
     X_prod = torch.matmul(X, theta.transpose(0, 1))
-    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
+    Xs_prod_sorted = torch.sort(Xs_prod, dim=1)[0]
     X_prod_sorted = torch.sort(X_prod, dim=0)[0]
-    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
-    sw = torch.mean(wasserstein_distance,dim=1)
+    wasserstein_distance = torch.abs(Xs_prod_sorted - X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)  # K\times L
+    sw = torch.mean(wasserstein_distance, dim=1)
     return torch.max(sw)
 
-def lowerboundFBSW_list(Xs,X,L=10,p=2,device='cpu'):
+
+def lowerboundFBSW_list(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     K = len(Xs)
     theta = rand_projections(dim, L, device)
-    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta,p=p) for i in range(K)]
+    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta, p=p) for i in range(K)]
     wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
     sw = torch.mean(wasserstein_distance, dim=1)
 
     return torch.max(sw)
 
-def FBSW(Xs,X,L=10,p=2,device='cpu'):
+
+def FBSW(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     theta = rand_projections(dim, L, device)
     Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
     X_prod = torch.matmul(X, theta.transpose(0, 1))
-    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
+    Xs_prod_sorted = torch.sort(Xs_prod, dim=1)[0]
     X_prod_sorted = torch.sort(X_prod, dim=0)[0]
-    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
-    sw = torch.max(wasserstein_distance,dim=0)[0]
+    wasserstein_distance = torch.abs(Xs_prod_sorted - X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)  # K\times L
+    sw = torch.max(wasserstein_distance, dim=0)[0]
     return torch.mean(sw)
 
-def FBSW_list(Xs,X,L=10,p=2,device='cpu'):
+
+def FBSW_list(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     K = len(Xs)
     theta = rand_projections(dim, L, device)
-    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta,p=p) for i in range(K)]
+    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta, p=p) for i in range(K)]
     wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
     sw = torch.max(wasserstein_distance, dim=0)[0]
     return torch.mean(sw)
 
 
-def EFBSW(Xs,X,L=10,p=2,device='cpu'):
+def EFBSW(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     theta = rand_projections(dim, L, device)
     Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
     X_prod = torch.matmul(X, theta.transpose(0, 1))
-    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
+    Xs_prod_sorted = torch.sort(Xs_prod, dim=1)[0]
     X_prod_sorted = torch.sort(X_prod, dim=0)[0]
-    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
+    wasserstein_distance = torch.abs(Xs_prod_sorted - X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)  # K\times L
     sw = torch.max(wasserstein_distance, dim=0)[0]
-    weight=torch.softmax(sw,dim=-1)
-    return torch.sum(weight*sw)
-
-def EFBSW_list(Xs,X,L=10,p=2,device='cpu'):
-    dim = X.size(1)
-    K = len(Xs)
-    theta = rand_projections(dim, L, device)
-    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta,p=p) for i in range(K)]
-    wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
-    sw = torch.max(wasserstein_distance, dim=0)[0]
-    weight = torch.softmax(sw,dim=-1)
+    weight = torch.softmax(sw, dim=-1)
     return torch.sum(weight * sw)
 
 
-def lowerbound_EFBSW(Xs,X,L=10,p=2,device='cpu'):
-    dim = X.size(1)
-    theta = rand_projections(dim, L, device)
-    Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
-    X_prod = torch.matmul(X, theta.transpose(0, 1))
-    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
-    X_prod_sorted = torch.sort(X_prod, dim=0)[0]
-    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
-    sw = torch.max(wasserstein_distance, dim=0)[0]
-    weight=torch.softmax(sw,dim=-1)
-    return torch.max(torch.sum(weight.view(1,L)*wasserstein_distance,dim=1))
-
-def lowerbound_EFBSW_list(Xs,X,L=10,p=2,device='cpu'):
+def EFBSW_list(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     K = len(Xs)
     theta = rand_projections(dim, L, device)
-    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta,p=p) for i in range(K)]
+    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta, p=p) for i in range(K)]
     wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
     sw = torch.max(wasserstein_distance, dim=0)[0]
-    weight = torch.softmax(sw,dim=-1)
-    return torch.max(torch.sum(weight.view(1,L)*wasserstein_distance,dim=1))
+    weight = torch.softmax(sw, dim=-1)
+    return torch.sum(weight * sw)
 
 
-def FEFBSW(Xs,X,L=10,p=2,device='cpu'):
+def lowerbound_EFBSW(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     theta = rand_projections(dim, L, device)
     Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
     X_prod = torch.matmul(X, theta.transpose(0, 1))
-    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
+    Xs_prod_sorted = torch.sort(Xs_prod, dim=1)[0]
     X_prod_sorted = torch.sort(X_prod, dim=0)[0]
-    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
-    wasserstein_distanceT = wasserstein_distance.T.view(L,-1,1)
-    M = torch.cdist(wasserstein_distanceT,wasserstein_distanceT,p=2)
-
-    weights = torch.softmax(torch.max(torch.max(M, dim=1)[0], dim=1)[0].view(1, -1), dim=1)
-    sws = torch.sum(weights * wasserstein_distance, dim=1)
-    return torch.max(sws)
+    wasserstein_distance = torch.abs(Xs_prod_sorted - X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)  # K\times L
+    sw = torch.max(wasserstein_distance, dim=0)[0]
+    weight = torch.softmax(sw, dim=-1)
+    return torch.max(torch.sum(weight.view(1, L) * wasserstein_distance, dim=1))
 
 
-
-def FEFBSW_list(Xs,X,L=10,p=2,device='cpu'):
+def lowerbound_EFBSW_list(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     K = len(Xs)
     theta = rand_projections(dim, L, device)
-    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta,p=p) for i in range(K)]
+    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta, p=p) for i in range(K)]
     wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
-    wasserstein_distanceT = wasserstein_distance.T.view(L,-1,1)
-    M = torch.cdist(wasserstein_distanceT, wasserstein_distanceT, p=2)
+    sw = torch.max(wasserstein_distance, dim=0)[0]
+    weight = torch.softmax(sw, dim=-1)
+    return torch.max(torch.sum(weight.view(1, L) * wasserstein_distance, dim=1))
 
-    weights = torch.softmax(torch.max(torch.max(M, dim=1)[0], dim=1)[0].view(1, -1), dim=1)
-    return torch.sum(weights * torch.max(wasserstein_distance,dim=0)[0])
 
-def lowerbound_FEFBSW(Xs,X,L=10,p=2,device='cpu'):
+def FEFBSW(Xs, X, L=10, p=2, device='cpu'):
     dim = X.size(1)
     theta = rand_projections(dim, L, device)
     Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
     X_prod = torch.matmul(X, theta.transpose(0, 1))
-    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
+    Xs_prod_sorted = torch.sort(Xs_prod, dim=1)[0]
     X_prod_sorted = torch.sort(X_prod, dim=0)[0]
-    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
-    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
-    wasserstein_distanceT = wasserstein_distance.T.view(L,-1,1)
-    M = torch.cdist(wasserstein_distanceT,wasserstein_distanceT,p=2)
-
-    weights = torch.softmax(torch.max(torch.max(M, dim=1)[0], dim=1)[0].view(1, -1), dim=1)
-    return torch.sum(weights * torch.max(wasserstein_distance,dim=0)[0])
-
-def lowerbound_FEFBSW_list(Xs,X,L=10,p=2,device='cpu'):
-    dim = X.size(1)
-    K = len(Xs)
-    theta = rand_projections(dim, L, device)
-    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta,p=p) for i in range(K)]
-    wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
-    wasserstein_distanceT = wasserstein_distance.T.view(L,-1,1)
+    wasserstein_distance = torch.abs(Xs_prod_sorted - X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)  # K\times L
+    wasserstein_distanceT = wasserstein_distance.T.view(L, -1, 1)
     M = torch.cdist(wasserstein_distanceT, wasserstein_distanceT, p=2)
 
     weights = torch.softmax(torch.max(torch.max(M, dim=1)[0], dim=1)[0].view(1, -1), dim=1)
     sws = torch.sum(weights * wasserstein_distance, dim=1)
     return torch.max(sws)
+
+
+def FEFBSW_list(Xs, X, L=10, p=2, device='cpu'):
+    dim = X.size(1)
+    K = len(Xs)
+    theta = rand_projections(dim, L, device)
+    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta, p=p) for i in range(K)]
+    wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
+    wasserstein_distanceT = wasserstein_distance.T.view(L, -1, 1)
+    M = torch.cdist(wasserstein_distanceT, wasserstein_distanceT, p=2)
+
+    weights = torch.softmax(torch.max(torch.max(M, dim=1)[0], dim=1)[0].view(1, -1), dim=1)
+    return torch.sum(weights * torch.max(wasserstein_distance, dim=0)[0])
+
+
+def lowerbound_FEFBSW(Xs, X, L=10, p=2, device='cpu'):
+    dim = X.size(1)
+    theta = rand_projections(dim, L, device)
+    Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
+    X_prod = torch.matmul(X, theta.transpose(0, 1))
+    Xs_prod_sorted = torch.sort(Xs_prod, dim=1)[0]
+    X_prod_sorted = torch.sort(X_prod, dim=0)[0]
+    wasserstein_distance = torch.abs(Xs_prod_sorted - X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)  # K\times L
+    wasserstein_distanceT = wasserstein_distance.T.view(L, -1, 1)
+    M = torch.cdist(wasserstein_distanceT, wasserstein_distanceT, p=2)
+
+    weights = torch.softmax(torch.max(torch.max(M, dim=1)[0], dim=1)[0].view(1, -1), dim=1)
+    return torch.sum(weights * torch.max(wasserstein_distance, dim=0)[0])
+
+
+def lowerbound_FEFBSW_list(Xs, X, L=10, p=2, device='cpu'):
+    dim = X.size(1)
+    K = len(Xs)
+    theta = rand_projections(dim, L, device)
+    wasserstein_distance = [one_dimensional_Wasserstein(Xs[i], X, theta, p=p) for i in range(K)]
+    wasserstein_distance = torch.stack(wasserstein_distance, dim=0)
+    wasserstein_distanceT = wasserstein_distance.T.view(L, -1, 1)
+    M = torch.cdist(wasserstein_distanceT, wasserstein_distanceT, p=2)
+
+    weights = torch.softmax(torch.max(torch.max(M, dim=1)[0], dim=1)[0].view(1, -1), dim=1)
+    sws = torch.sum(weights * wasserstein_distance, dim=1)
+    return torch.max(sws)
+
 
 def sliced_wasserstein_distance(encoded_samples,
-                                 distribution_samples,
-                                 num_projections=50,
-                                 p=2,
-                                 device='cpu'):
+                                distribution_samples,
+                                num_projections=50,
+                                p=2,
+                                device='cpu'):
     embedding_dim = distribution_samples.size(1)
     projections = rand_projections(dim=embedding_dim, num_projections=num_projections, device=device)
     encoded_projections = encoded_samples.matmul(projections.transpose(0, 1))
@@ -272,3 +288,10 @@ def sliced_wasserstein_distance(encoded_samples,
                             torch.sort(distribution_projections.transpose(0, 1), dim=1)[0])
     wasserstein_distance = torch.pow(wasserstein_distance, p)
     return wasserstein_distance.mean()
+
+
+def generate_image(model, prior_distribution, num_images, device='cpu'):
+    with torch.no_grad():
+        z_sample = prior_distribution(num_images).to(device)
+        x_synthesis = model.generate(z_sample).to(device)
+        return x_synthesis

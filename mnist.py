@@ -13,7 +13,7 @@ from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
 from swae.dataloader import *
-
+from swae.utils import *
 
 def main():
     # train args
@@ -189,6 +189,8 @@ def main():
                           '{}/testrecon_epoch_{}.png'.format(imagesdir, epoch + 1),
                           normalize=True)
 
-
+        gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
+        vutils.save_image(gen_image,
+                          '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 if __name__ == '__main__':
     main()
