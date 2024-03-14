@@ -88,9 +88,9 @@ class SWAEBatchTrainer:
                 l1_loss += l1
                 swd_loss += latent_ws_dist
 
-                bce_loss /= batch_size
-                l1_loss /= batch_size
-                swd_loss /= batch_size
+            bce_loss /= batch_size
+            l1_loss /= batch_size
+            swd_loss /= batch_size
 
             z_prior = self._distribution_fn(batch_size).to(self._device)
             fsw = FEFBSW_list(Xs=list_z, X=z_prior, device=self._device)

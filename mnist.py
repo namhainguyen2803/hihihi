@@ -2,6 +2,7 @@ import argparse
 import os
 
 import matplotlib as mpl
+
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import torch
@@ -13,6 +14,7 @@ from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
 from swae.dataloader import *
 
+
 def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch MNIST Example')
@@ -20,7 +22,7 @@ def main():
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
     parser.add_argument('--batch-size', type=int, default=500, metavar='N',
                         help='input batch size for training (default: 500)')
-    parser.add_argument('--epochs', type=int, default=150, metavar='N',
+    parser.add_argument('--epochs', type=int, default=30, metavar='N',
                         help='number of epochs to train (default: 30)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.001)')
@@ -48,7 +50,8 @@ def main():
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    dataloader_kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {'num_workers': args.num_workers, 'pin_memory': False}
+    dataloader_kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {'num_workers': args.num_workers,
+                                                                                 'pin_memory': False}
     # set random seed
     torch.manual_seed(args.seed)
     if use_cuda:
@@ -58,11 +61,9 @@ def main():
         args.batch_size, args.epochs, args.lr, args.alpha, args.distribution, device.type, args.seed
     ))
 
-
     # build train and test set data loaders
     data_loader = MNISTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
     train_loader, test_loader = data_loader.create_dataloader()
-
 
     # create encoder and decoder
     model = MNISTAutoencoder().to(device)
@@ -79,7 +80,6 @@ def main():
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr)
 
-
     # determine latent distribution
     if args.distribution == 'circle':
         distribution_fn = rand_cirlce2d
@@ -89,7 +89,8 @@ def main():
         distribution_fn = rand_uniform2d
 
     # create batch sliced_wasserstein autoencoder trainer
-    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer, num_classes=10, distribution_fn=distribution_fn, device=device)
+    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer, num_classes=10, distribution_fn=distribution_fn,
+                               device=device)
     # put networks in training mode
     model.train()
 
@@ -103,9 +104,9 @@ def main():
             batch = trainer.train_on_batch(x, y)
             if (batch_idx + 1) % args.log_interval == 0:
                 print('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}'.format(
-                        epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
-                        (batch_idx + 1), len(train_loader),
-                        batch['loss'].item()))
+                    epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
+                    (batch_idx + 1), len(train_loader),
+                    batch['loss'].item()))
 
         # evaluate autoencoder on test dataset
         # keep track swd gap of each gap, reconstruction loss of each gap
@@ -127,10 +128,16 @@ def main():
                 for cls_id in range(data_loader.num_classes):
                     if cls_id in test_evals['list_recon'].keys():
                         reconstruction_loss[cls_id] += test_evals['list_recon'][cls_id]
+                    else:
+                        print("Cac1")
                     if cls_id in test_evals['list_swd'].keys():
                         posterior_gap[cls_id] += test_evals['list_swd'][cls_id]
+                    else:
+                        print("Cac2")
                     if cls_id in test_evals['list_l1'].keys():
                         list_l1[cls_id] += test_evals['list_l1'][cls_id]
+                    else:
+                        print("Cac3")
 
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
@@ -166,8 +173,8 @@ def main():
 
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
-                epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
-                test_loss))
+            epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
+            test_loss))
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
         # save model
         torch.save(model.state_dict(), '{}/mnist_epoch_{}.pth'.format(chkptdir, epoch + 1))
@@ -184,8 +191,6 @@ def main():
         vutils.save_image(batch['decode'].detach(),
                           '{}/test_reconstructions_epoch_{}.png'.format(imagesdir, epoch + 1),
                           normalize=True)
-
-
 
 
 if __name__ == '__main__':
