@@ -98,8 +98,8 @@ def main():
     # train networks for n epochs
     print('training...')
     for epoch in range(args.epochs):
-        if epoch > 10:
-            trainer.weight *= 1.1
+        # if epoch > 10:
+        #     trainer.weight *= 1.1
         # train autoencoder on train dataset
         for batch_idx, (x, y) in enumerate(train_loader, start=0):
             batch = trainer.train_on_batch(x, y)
