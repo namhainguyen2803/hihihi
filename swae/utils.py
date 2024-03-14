@@ -2,6 +2,9 @@ import numpy as np
 import torch
 import ot
 from torch.nn.functional import pad
+import torch.nn.functional as F
+
+
 def quantile_function(qs, cws, xs):
     n = xs.shape[0]
     cws = cws.T.contiguous()

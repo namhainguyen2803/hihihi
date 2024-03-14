@@ -106,29 +106,62 @@ def main():
                         epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
+
         # evaluate autoencoder on test dataset
+        # keep track swd gap of each gap, reconstruction loss of each gap
         test_encode, test_targets, test_loss = list(), list(), 0.0
         posterior_gap = [0 for _ in range(data_loader.num_classes)]
-        num_ins = [0 for _ in range(data_loader.num_classes)]
+        reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
+        list_l1 = [0 for _ in range(data_loader.num_classes)]
+        num_instances = [0 for _ in range(data_loader.num_classes)]
+
         with torch.no_grad():
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
                 test_evals = trainer.test_on_batch(x_test, y_test)
+
                 test_encode.append(test_evals['encode'].detach())
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
 
-                for cls_id, ws_dist in test_evals["wasserstein_distances"].items():
-                    posterior_gap[cls_id] += ws_dist
-                    num_ins[cls_id] += x_test[y_test == cls_id].shape[0]
+                # update evaluation incrementally
+                for cls_id in range(test_loader.num_classes):
+                    if cls_id in test_evals['list_recon'].keys():
+                        reconstruction_loss[cls_id] += test_evals['list_recon'][cls_id]
+                    if cls_id in test_evals['list_swd'].keys():
+                        posterior_gap[cls_id] += test_evals['list_swd'][cls_id]
+                    if cls_id in test_evals['list_l1'].keys():
+                        list_l1[cls_id] += test_evals['list_l1'][cls_id]
 
-        avg_gap = [0 for _ in range(data_loader.num_classes)]
-        for cls_id in range(data_loader.num_classes):
-            avg_gap[cls_id] = posterior_gap[cls_id] / num_ins[cls_id]
+                    num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
-        print("Sliced Wasserstein gap of prior distribution and posterior distribution of each class:")
-        print(avg_gap)
-        print()
+            avg_posterior_gap = [0 for _ in range(data_loader.num_classes)]
+            avg_reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
+            avg_list_l1 = [0 for _ in range(data_loader.num_classes)]
 
+            for cls_id in range(data_loader.num_classes):
+                avg_posterior_gap[cls_id] = posterior_gap[cls_id] / num_instances[cls_id]
+                avg_reconstruction_loss[cls_id] = avg_reconstruction_loss[cls_id] / num_instances[cls_id]
+                avg_list_l1[cls_id] = avg_list_l1[cls_id] / num_instances[cls_id]
+
+            print()
+            print("############## EVALUATION ##############")
+            print("Overall evaluation results:")
+            print(f"Overall loss: {test_evals['loss'].item()}")
+            print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
+            print(f"SWD loss: {test_evals['swd_loss'].item()}")
+            print(f"Fair_SWD loss: {test_evals['fsw'].item()}")
+            print(f"L1 loss: {test_evals['l1_loss'].item()}")
+
+            print()
+            print("Evaluation of each class:")
+            print(f"Reconstruction loss: {avg_reconstruction_loss}")
+            print(f"L1 loss: {avg_list_l1}")
+            print(f"Posterior gap: {avg_posterior_gap}")
+
+            print("########################################")
+            print()
+
+        # plot
         test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
 
         test_loss /= len(test_loader)
@@ -151,6 +184,8 @@ def main():
         vutils.save_image(batch['decode'].detach(),
                           '{}/test_reconstructions_epoch_{}.png'.format(imagesdir, epoch + 1),
                           normalize=True)
+
+
 
 
 if __name__ == '__main__':
