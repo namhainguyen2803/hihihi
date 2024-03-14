@@ -149,7 +149,7 @@ def main():
             print(f"Overall loss: {test_evals['loss'].item()}")
             print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
             print(f"SWD loss: {test_evals['swd_loss'].item()}")
-            print(f"Fair_SWD loss: {test_evals['FairSW'].item()}")
+            print(f"Fair_SWD loss: {test_evals['fsw_loss'].item()}")
             print(f"L1 loss: {test_evals['l1_loss'].item()}")
 
             print()
