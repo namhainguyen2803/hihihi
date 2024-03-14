@@ -128,27 +128,24 @@ def main():
                 for cls_id in range(data_loader.num_classes):
                     if cls_id in test_evals['list_recon'].keys():
                         reconstruction_loss[cls_id] += test_evals['list_recon'][cls_id]
-                    else:
-                        print("Cac1")
+
                     if cls_id in test_evals['list_swd'].keys():
                         posterior_gap[cls_id] += test_evals['list_swd'][cls_id]
-                    else:
-                        print("Cac2")
+
                     if cls_id in test_evals['list_l1'].keys():
                         list_l1[cls_id] += test_evals['list_l1'][cls_id]
-                    else:
-                        print("Cac3")
+
 
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
-            avg_posterior_gap = [0 for _ in range(data_loader.num_classes)]
-            avg_reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
-            avg_list_l1 = [0 for _ in range(data_loader.num_classes)]
+            # avg_posterior_gap = [0 for _ in range(data_loader.num_classes)]
+            # avg_reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
+            # avg_list_l1 = [0 for _ in range(data_loader.num_classes)]
 
-            for cls_id in range(data_loader.num_classes):
-                avg_posterior_gap[cls_id] = posterior_gap[cls_id] / num_instances[cls_id]
-                avg_reconstruction_loss[cls_id] = avg_reconstruction_loss[cls_id] / num_instances[cls_id]
-                avg_list_l1[cls_id] = avg_list_l1[cls_id] / num_instances[cls_id]
+            # for cls_id in range(data_loader.num_classes):
+            #     avg_posterior_gap[cls_id] = posterior_gap[cls_id] / num_instances[cls_id]
+            #     avg_reconstruction_loss[cls_id] = avg_reconstruction_loss[cls_id] / num_instances[cls_id]
+            #     avg_list_l1[cls_id] = avg_list_l1[cls_id] / num_instances[cls_id]
 
             print()
             print("############## EVALUATION ##############")
@@ -161,9 +158,9 @@ def main():
 
             print()
             print("Evaluation of each class:")
-            print(f"Reconstruction loss: {avg_reconstruction_loss}")
-            print(f"L1 loss: {avg_list_l1}")
-            print(f"Posterior gap: {avg_posterior_gap}")
+            print(f"Reconstruction loss: {reconstruction_loss}")
+            print(f"L1 loss: {list_l1}")
+            print(f"Posterior gap: {posterior_gap}")
 
             print("########################################")
             print()
