@@ -20,14 +20,14 @@ class MNISTDataLoader():
         train_set = datasets.MNIST(self.data_dir + "train/", train=True, download=True,
                                    transform=transforms.Compose([
                                        transforms.ToTensor(),
-                                       transforms.Normalize((0.1307,), (0.3081,))
+                                       # transforms.Normalize((0.1307,), (0.3081,))
                                    ]))
         self.train_dataset = train_set
 
         test_set = datasets.MNIST(self.data_dir + "test/", train=False, download=True,
                                   transform=transforms.Compose([
                                       transforms.ToTensor(),
-                                      transforms.Normalize((0.1307,), (0.3081,))
+                                      # transforms.Normalize((0.1307,), (0.3081,))
                                   ]))
         self.test_dataset = test_set
 
