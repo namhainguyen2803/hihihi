@@ -124,7 +124,7 @@ def main():
                 test_targets.append(y_test)
 
                 # update evaluation incrementally
-                for cls_id in range(test_loader.num_classes):
+                for cls_id in range(data_loader.num_classes):
                     if cls_id in test_evals['list_recon'].keys():
                         reconstruction_loss[cls_id] += test_evals['list_recon'][cls_id]
                     if cls_id in test_evals['list_swd'].keys():
