@@ -136,7 +136,6 @@ def main():
                     if cls_id in test_evals['list_l1'].keys():
                         list_l1[cls_id] += test_evals['list_l1'][cls_id]
 
-
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
             # avg_posterior_gap = [0 for _ in range(data_loader.num_classes)]
@@ -187,7 +186,7 @@ def main():
         # save sample input and reconstruction
         vutils.save_image(x, '{}/test_samples_epoch_{}.png'.format(imagesdir, epoch + 1))
         vutils.save_image(batch['decode'].detach(),
-                          '{}/test_reconstructions_epoch_{}.png'.format(imagesdir, epoch + 1),
+                          '{}/testrecon_epoch_{}.png'.format(imagesdir, epoch + 1),
                           normalize=True)
 
 
