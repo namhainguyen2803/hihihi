@@ -21,7 +21,7 @@ class SWAEBatchTrainer:
     """
 
     def __init__(self, autoencoder, optimizer, distribution_fn, num_classes=10,
-                 num_projections=50, p=2, weight=10, device=None):
+                 num_projections=50, p=2, weight=5, device=None):
         self.model_ = autoencoder
         self.optimizer = optimizer
         self._distribution_fn = distribution_fn
