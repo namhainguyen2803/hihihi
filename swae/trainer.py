@@ -32,7 +32,7 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight_fsw = 0.1
+        self.weight_fsw = 1
 
     def __call__(self, x):
         return self.eval_on_batch(x)
@@ -65,15 +65,21 @@ class SWAEBatchTrainer:
                                               device=self._device)
 
             list_z = list()
+            list_recon_loss = dict()
             wasserstein_distances = dict()
             for cls in range(self.num_classes):
+
+                recon_loss = F.binary_cross_entropy(recon_x[y == cls], x[y == cls])
+
                 z_cls = z_posterior[y == cls]
                 list_z.append(z_cls)
                 z_sample = self._distribution_fn(z_cls.shape[0]).to(self._device)
                 ws_dist = sliced_wasserstein_distance(encoded_samples=z_cls, distribution_samples=z_sample,
                                                       num_projections=self.num_projections_, p=self.p_,
                                                       device=self._device)
+
                 wasserstein_distances[cls] = ws_dist
+                list_recon_loss[cls] = recon_loss
 
             fsw = FEFBSW_list(Xs=list_z, X=z_prior, device=self._device)
 
