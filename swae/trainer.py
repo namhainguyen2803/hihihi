@@ -140,7 +140,7 @@ class SWAEBatchTrainer:
         return {
             'loss': loss,
             'bce': bce,
-            'FairSW': fsw,
+            'fsw_loss': fsw,
             'w2': swd,
             'encode': z_posterior,
             'decode': recon_x,
