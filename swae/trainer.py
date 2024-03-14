@@ -32,7 +32,7 @@ class SWAEBatchTrainer:
         self.num_classes = num_classes
 
         self.weight = 10
-        self.weight_fsw = 1
+        self.weight_fsw = 0.01
 
     def __call__(self, x):
         return self.eval_on_batch(x)
