@@ -53,7 +53,7 @@ class SWAEBatchTrainer:
             x = x.to(self._device)
             y = y.to(self._device)
             recon_x, z_posterior = self.model_(x)
-            bce = F.cross_entropy(recon_x, x)
+            bce = F.binary_cross_entropy(recon_x, x)
 
             batch_size = x.size(0)
             z_prior = self._distribution_fn(batch_size).to(self._device)
