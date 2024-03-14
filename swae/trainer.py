@@ -31,8 +31,8 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight = 10
-        self.weight_fsw = 0.01
+        self.weight = 8
+        self.weight_fsw = 0.1
 
     def __call__(self, x):
         return self.eval_on_batch(x)
