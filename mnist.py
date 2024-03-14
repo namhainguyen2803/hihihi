@@ -11,7 +11,7 @@ from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
-# from swae.dataloader import *
+from swae.dataloader import *
 from torch.utils.data import DataLoader
 
 def main():
