@@ -21,18 +21,18 @@ class SWAEBatchTrainer:
     """
 
     def __init__(self, autoencoder, optimizer, distribution_fn, num_classes=10,
-                 num_projections=50, p=2, weight=0.1, device=None):
+                 num_projections=50, p=2, weight=5, device=None):
         self.model_ = autoencoder
         self.optimizer = optimizer
         self._distribution_fn = distribution_fn
         self.embedding_dim_ = self.model_.encoder.embedding_dim_
         self.num_projections_ = num_projections
         self.p_ = p
-        self.weight = weight
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight_fsw = 1
+        self.weight = 5
+        self.weight_fsw = 10
 
     def __call__(self, x):
         return self.eval_on_batch(x)
