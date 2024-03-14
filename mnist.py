@@ -31,7 +31,7 @@ def main():
                         help='Latent Distribution (default: circle)')
     parser.add_argument('--optimizer', type=str, default='rmsprop',
                         help='Optimizer (default: rmsprop)')
-    parser.add_argument('--no-cuda', action='store_true', default=True,
+    parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--num-workers', type=int, default=8, metavar='N',
                         help='number of dataloader workers if device is CPU (default: 8)')
