@@ -61,24 +61,24 @@ def main():
 
 
     # build train and test set data loaders
-    # data_loader = MNISTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
-    # train_loader, test_loader = data_loader.create_dataloader()
+    data_loader = MNISTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+    train_loader, test_loader = data_loader.create_dataloader()
 
     # build train and test set data loaders
-    train_loader = DataLoader(
-        datasets.MNIST(args.datadir+"/train", train=True, download=True,
-                       transform=transforms.Compose([
-                            transforms.ToTensor(),
-                            # transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.batch_size, shuffle=True, **dataloader_kwargs)
-    test_loader = DataLoader(
-        datasets.MNIST(args.datadir+"/test", train=False, download=True,
-                       transform=transforms.Compose([
-                            transforms.ToTensor(),
-                            # transforms.Normalize((0.1307,), (0.3081,))
-                        ])),
-        batch_size=args.batch_size, shuffle=False, **dataloader_kwargs)
+    # train_loader = DataLoader(
+    #     datasets.MNIST(args.datadir+"/train", train=True, download=True,
+    #                    transform=transforms.Compose([
+    #                         transforms.ToTensor(),
+    #                         # transforms.Normalize((0.1307,), (0.3081,))
+    #                    ])),
+    #     batch_size=args.batch_size, shuffle=True, **dataloader_kwargs)
+    # test_loader = DataLoader(
+    #     datasets.MNIST(args.datadir+"/test", train=False, download=True,
+    #                    transform=transforms.Compose([
+    #                         transforms.ToTensor(),
+    #                         # transforms.Normalize((0.1307,), (0.3081,))
+    #                     ])),
+    #     batch_size=args.batch_size, shuffle=False, **dataloader_kwargs)
 
 
     # create encoder and decoder
