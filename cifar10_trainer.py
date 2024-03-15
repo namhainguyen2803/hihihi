@@ -34,8 +34,8 @@ def main():
                         help='weight of divergence (default: 10.0)')
     parser.add_argument('--distribution', type=str, default='normal', metavar='DIST',
                         help='Latent Distribution (default: normal)')
-    parser.add_argument('--optimizer', type=str, default='rmsprop',
-                        help='Optimizer (default: rmsprop)')
+    parser.add_argument('--optimizer', type=str, default='adam',
+                        help='Optimizer (default: adam)')
     parser.add_argument('--embedding-size', type=int, default=64, metavar='ES',
                         help='model embedding size (default: 64)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -64,8 +64,8 @@ def main():
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
     # log args
-    print('batch size {}\nimage size {}\nepochs {}\nAdam: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}'.format(
-        args.batch_size, args.img_size, args.epochs,
+    print('batch size {}\nepochs {}\nAdam: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}'.format(
+        args.batch_size, args.epochs,
         args.lr, args.beta1, args.beta2, args.distribution,
         device.type, args.seed
     ))
