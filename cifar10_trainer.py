@@ -16,9 +16,9 @@ def main():
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch CIFAR10 Example')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
-    parser.add_argument('--batch-size', type=int, default=64, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=80, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=10, metavar='N',
+    parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
                         help='learning rate (default: 0.001)')
@@ -72,22 +72,8 @@ def main():
 
 
     # build train and test set data loaders
-    train_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10( "data/train/",
-                         train=True, download=True,
-                         transform=transforms.Compose([
-                             transforms.RandomCrop(32, padding=4),
-                             transforms.RandomHorizontalFlip(),
-                             transforms.ToTensor(),
-                         ])),
-        batch_size=args.batch_size, shuffle=True, **dataloader_kwargs)
-    test_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10( "data/test/",
-                         train=False, download=True,
-                         transform=transforms.Compose([
-                             transforms.ToTensor(),
-                         ])),
-        batch_size=32, shuffle=False, **dataloader_kwargs)
+    data_loader = CIFAR10DataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size, dataloader_kwargs=dataloader_kwargs)
+    train_loader, test_loader = data_loader.create_dataloader()
 
     # create encoder and decoder
     model = CIFAR10Autoencoder(embedding_dim=args.embedding_size).to(device)
@@ -122,8 +108,9 @@ def main():
     # train networks for n epochs
     print('training...')
     for epoch in range(args.epochs):
-        if epoch > 10:
-            trainer.weight *= 1.1
+        # if epoch > 10:
+        #     trainer.weight *= 1.1
+
         # train autoencoder on train dataset
         for batch_idx, (x, y) in enumerate(train_loader, start=0):
             batch = trainer.train_on_batch(x, y)
@@ -132,6 +119,7 @@ def main():
                         epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
+
         # evaluate autoencoder on test dataset
         test_encode, test_targets, test_loss = list(), list(), 0.0
         with torch.no_grad():

@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 
 class MNISTDataLoader:
-    def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250):
+    def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250, dataloader_kwargs=None):
         self.test_loader = None
         self.train_loader = None
         self.train_dataset = None
@@ -13,8 +13,10 @@ class MNISTDataLoader:
         self.data_dir = data_dir
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
-        self.create_dataset()
         self.num_classes = 10
+        self.dataloader_kwargs = dataloader_kwargs
+
+        self.create_dataset()
 
     def create_dataset(self):
         train_set = datasets.MNIST(self.data_dir + "train/", train=True, download=True,
@@ -46,7 +48,7 @@ class MNISTDataLoader:
             kind='fixed'
         )
 
-        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
+        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler, **self.dataloader_kwargs)
 
         instances_indices = torch.arange(len(self.test_dataset.targets))
         all_classes_indices = list()
@@ -62,7 +64,7 @@ class MNISTDataLoader:
             kind='fixed'
         )
 
-        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler)
+        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler, **self.dataloader_kwargs)
 
         # self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
 
@@ -70,7 +72,7 @@ class MNISTDataLoader:
 
 
 class CIFAR10DataLoader:
-    def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250):
+    def __init__(self, data_dir="data/", train_batch_size=80, test_batch_size=80, dataloader_kwargs=None):
         self.test_loader = None
         self.train_loader = None
         self.train_dataset = None
@@ -79,6 +81,7 @@ class CIFAR10DataLoader:
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
         self.num_classes = 10
+        self.dataloader_kwargs = dataloader_kwargs
 
         self.create_dataset()
 
@@ -102,6 +105,7 @@ class CIFAR10DataLoader:
         self.test_dataset = test_set
 
     def create_dataloader(self):
+
         instances_indices = torch.arange(len(self.train_dataset.targets))
         all_classes_indices = list()
         for i in range(self.num_classes):
@@ -115,7 +119,7 @@ class CIFAR10DataLoader:
             alpha=1,
             kind='fixed'
         )
-        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
+        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler, **self.dataloader_kwargs)
 
         instances_indices = torch.arange(len(self.test_dataset.targets))
         all_classes_indices = list()
@@ -130,6 +134,6 @@ class CIFAR10DataLoader:
             alpha=1,
             kind='fixed'
         )
-        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler)
+        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler, **self.dataloader_kwargs)
 
         return self.train_loader, self.test_loader
