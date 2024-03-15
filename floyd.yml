@@ -9,4 +9,4 @@ task:
    input:
      - source: eifuentes/datasets/lsun-church/1
        destination: input
-   command: pip install -e . && python examples/lsun_trainer.py
+   command: pip install -e . && python examples/cifar10_trainer.py
