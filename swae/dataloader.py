@@ -37,7 +37,7 @@ class MNISTDataLoader:
         instances_indices = torch.arange(len(self.train_dataset.targets))
         all_classes_indices = list()
         for i in range(self.num_classes):
-            class_index = instances_indices[self.train_dataset.targets == i].tolist()
+            class_index = instances_indices[torch.tensor(self.train_dataset.targets) == i].tolist()
             all_classes_indices.append(class_index)
 
         batch_sampler = SamplerFactory().get(
@@ -53,7 +53,7 @@ class MNISTDataLoader:
         instances_indices = torch.arange(len(self.test_dataset.targets))
         all_classes_indices = list()
         for i in range(self.num_classes):
-            class_index = instances_indices[self.test_dataset.targets == i].tolist()
+            class_index = instances_indices[torch.tensor(self.test_dataset.targets) == i].tolist()
             all_classes_indices.append(class_index)
 
         test_batch_sampler = SamplerFactory().get(
@@ -109,7 +109,7 @@ class CIFAR10DataLoader:
         instances_indices = torch.arange(len(self.train_dataset.targets))
         all_classes_indices = list()
         for i in range(self.num_classes):
-            class_index = instances_indices[self.train_dataset.targets == i].tolist()
+            class_index = instances_indices[torch.tensor(self.train_dataset.targets) == i].tolist()
             all_classes_indices.append(class_index)
 
         batch_sampler = SamplerFactory().get(
@@ -124,7 +124,7 @@ class CIFAR10DataLoader:
         instances_indices = torch.arange(len(self.test_dataset.targets))
         all_classes_indices = list()
         for i in range(self.num_classes):
-            class_index = instances_indices[self.test_dataset.targets == i].tolist()
+            class_index = instances_indices[torch.tensor(self.test_dataset.targets) == i].tolist()
             all_classes_indices.append(class_index)
 
         test_batch_sampler = SamplerFactory().get(
