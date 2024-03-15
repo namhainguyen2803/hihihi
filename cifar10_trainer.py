@@ -64,8 +64,8 @@ def main():
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
     # log args
-    print('batch size {}\nimage size {}\nepochs {}\nAdam: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}'.format(
-        args.batch_size, args.img_size, args.epochs,
+    print('batch size {}\nepochs {}\nAdam: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}'.format(
+        args.batch_size, args.epochs,
         args.lr, args.beta1, args.beta2, args.distribution,
         device.type, args.seed
     ))
