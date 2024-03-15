@@ -16,14 +16,14 @@ def main():
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch CIFAR10 Example')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
-    parser.add_argument('--img-size', type=int, default=64, metavar='S',
-                        help='input image size (default: 64)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
                         help='learning rate (default: 0.001)')
+    parser.add_argument('--alpha', type=float, default=0.9, metavar='A',
+                        help='RMSprop alpha/rho (default: 0.9)')
     parser.add_argument('--beta1', type=float, default=0.5, metavar='B1',
                         help='Adam beta1 (default: 0.5)')
     parser.add_argument('--beta2', type=float, default=0.999, metavar='B2',
