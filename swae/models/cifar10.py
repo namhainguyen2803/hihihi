@@ -1,145 +1,121 @@
 import torch
-from torch.autograd import Variable
-from torch import nn
+import torch.nn as nn
 
 
-class VAE(nn.Module):
-    def __init__(self, label, image_size, channel_num, kernel_num, z_size):
-        # configurations
-        super().__init__()
-        self.label = label
-        self.image_size = image_size
-        self.channel_num = channel_num
-        self.kernel_num = kernel_num
-        self.z_size = z_size
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        m.weight.data.normal_(0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        m.weight.data.normal_(1.0, 0.02)
+        m.bias.data.fill_(0)
 
-        # encoder
-        self.encoder = nn.Sequential(
-            self._conv(channel_num, kernel_num // 4),
-            self._conv(kernel_num // 4, kernel_num // 2),
-            self._conv(kernel_num // 2, kernel_num),
-        )
 
-        # encoded feature's size and volume
-        self.feature_size = image_size // 8
-        self.feature_volume = kernel_num * (self.feature_size ** 2)
+class CIFAR10Encoder(nn.Module):
+    """ CIFAR10 Encoder from Original Paper's Keras based Implementation.
 
-        # q
-        self.q_mean = self._linear(self.feature_volume, z_size, relu=False)
-        self.q_logvar = self._linear(self.feature_volume, z_size, relu=False)
+        Args:
+            init_num_filters (int): initial number of filters from encoder image channels
+            lrelu_slope (float): positive number indicating LeakyReLU negative slope
+            embedding_dim (int): embedding dimensionality
+    """
 
-        # projection
-        self.project = self._linear(z_size, self.feature_volume, relu=False)
+    def __init__(self, init_num_filters=12, lrelu_slope=0.2, embedding_dim=32):
+        super(CIFAR10Encoder, self).__init__()
 
-        # decoder
-        self.decoder = nn.Sequential(
-            self._deconv(kernel_num, kernel_num // 2),
-            self._deconv(kernel_num // 2, kernel_num // 4),
-            self._deconv(kernel_num // 4, channel_num),
-            nn.Sigmoid()
+        self.init_num_filters_ = init_num_filters
+        self.lrelu_slope_ = lrelu_slope
+        self.embedding_dim_ = embedding_dim
+
+        self.features = nn.Sequential(
+            # 64x64
+            nn.Conv2d(3, self.init_num_filters_, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.LeakyReLU(self.lrelu_slope_, inplace=True),
+
+            nn.Conv2d(self.init_num_filters_, self.init_num_filters_ * 2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.init_num_filters_ * 2),
+            nn.LeakyReLU(self.lrelu_slope_, inplace=True),
+
+            nn.Conv2d(self.init_num_filters_ * 2, self.init_num_filters_ * 4, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.init_num_filters_ * 4),
+            nn.LeakyReLU(self.lrelu_slope_, inplace=True),
+
+            nn.Conv2d(self.init_num_filters_ * 4, self.init_num_filters_ * 8, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.init_num_filters_ * 8),
+            nn.LeakyReLU(self.lrelu_slope_, inplace=True),
+
+            nn.Conv2d(self.init_num_filters_ * 8, self.embedding_dim_, kernel_size=2, stride=1, padding=0, bias=True),
         )
 
     def forward(self, x):
-        # encode x
-        encoded = self.encoder(x)
+        x = self.features(x)
+        x = x.view(-1, self.embedding_dim_)
+        return x
 
-        # sample latent code z from q given x.
-        mean, logvar = self.q(encoded)
-        z = self.z(mean, logvar)
-        z_projected = self.project(z).view(
-            -1, self.kernel_num,
-            self.feature_size,
-            self.feature_size,
+
+class CIFAR10Decoder(nn.Module):
+    """ CIFAR10 Decoder from Original Paper's Keras based Implementation.
+
+        Args:
+            init_num_filters (int): initial number of filters from encoder image channels
+            lrelu_slope (float): positive number indicating LeakyReLU negative slope
+            embedding_dim (int): embedding dimensionality
+    """
+
+    def __init__(self, init_num_filters=12, embedding_dim=32):
+        super(CIFAR10Decoder, self).__init__()
+
+        self.init_num_filters_ = init_num_filters
+        self.embedding_dim_ = embedding_dim
+
+        self.features = nn.Sequential(
+
+            nn.ConvTranspose2d(self.embedding_dim_, self.init_num_filters_ * 4, kernel_size=4, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(self.init_num_filters_ * 4),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose2d(self.init_num_filters_ * 4, self.init_num_filters_ * 2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.init_num_filters_ * 2),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose2d(self.init_num_filters_ * 2, self.init_num_filters_, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.init_num_filters_),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose2d(self.init_num_filters_, 3, kernel_size=4, stride=2, padding=1, bias=True),
         )
 
-        # reconstruct x from z
-        x_reconstructed = self.decoder(z_projected)
+    def forward(self, z):
+        z = z.view(-1, self.embedding_dim_, 1, 1)
+        z = self.features(z)
+        return torch.sigmoid(z)
 
-        # return the parameters of distribution of q given x and the
-        # reconstructed image.
-        return (mean, logvar), x_reconstructed
 
-    # ==============
-    # VAE components
-    # ==============
+class CIFAR10Autoencoder(nn.Module):
+    """ CIFAR10 Autoencoder from Original Paper's Keras based Implementation.
 
-    def q(self, encoded):
-        unrolled = encoded.view(-1, self.feature_volume)
-        return self.q_mean(unrolled), self.q_logvar(unrolled)
+        Args:
+            init_num_filters (int): initial number of filters from encoder image channels
+            lrelu_slope (float): positive number indicating LeakyReLU negative slope
+            embedding_dim (int): embedding dimensionality
+    """
 
-    def z(self, mean, logvar):
-        std = logvar.mul(0.5).exp_()
-        eps = (
-            Variable(torch.randn(std.size())).cuda() if self._is_on_cuda else
-            Variable(torch.randn(std.size()))
-        )
-        return eps.mul(std).add_(mean)
+    def __init__(self, init_num_filters=12, lrelu_slope=0.2, embedding_dim=32):
+        super(CIFAR10Autoencoder, self).__init__()
 
-    def reconstruction_loss(self, x_reconstructed, x):
-        return nn.BCELoss(size_average=False)(x_reconstructed, x) / x.size(0)
+        self.init_num_filters_ = init_num_filters
+        self.lrelu_slope_ = lrelu_slope
+        self.embedding_dim_ = embedding_dim
 
-    def kl_divergence_loss(self, mean, logvar):
-        return ((mean**2 + logvar.exp() - 1 - logvar) / 2).mean()
+        self.encoder = CIFAR10Encoder(init_num_filters, lrelu_slope, embedding_dim)
+        self.decoder = CIFAR10Decoder(init_num_filters, embedding_dim)
 
-    # =====
-    # Utils
-    # =====
+        self.encoder.apply(weights_init)
+        self.decoder.apply(weights_init)
 
-    @property
-    def name(self):
-        return (
-            'VAE'
-            '-{kernel_num}k'
-            '-{label}'
-            '-{channel_num}x{image_size}x{image_size}'
-        ).format(
-            label=self.label,
-            kernel_num=self.kernel_num,
-            image_size=self.image_size,
-            channel_num=self.channel_num,
-        )
+    def forward(self, x):
+        z = self.encoder(x)
+        return self.decoder(z), z
 
-    def sample(self, size):
-        z = Variable(
-            torch.randn(size, self.z_size).cuda() if self._is_on_cuda() else
-            torch.randn(size, self.z_size)
-        )
-        z_projected = self.project(z).view(
-            -1, self.kernel_num,
-            self.feature_size,
-            self.feature_size,
-        )
-        return self.decoder(z_projected).data
-
-    def _is_on_cuda(self):
-        return next(self.parameters()).is_cuda
-
-    # ======
-    # Layers
-    # ======
-
-    def _conv(self, channel_size, kernel_num):
-        return nn.Sequential(
-            nn.Conv2d(
-                channel_size, kernel_num,
-                kernel_size=4, stride=2, padding=1,
-            ),
-            nn.BatchNorm2d(kernel_num),
-            nn.ReLU(),
-        )
-
-    def _deconv(self, channel_num, kernel_num):
-        return nn.Sequential(
-            nn.ConvTranspose2d(
-                channel_num, kernel_num,
-                kernel_size=4, stride=2, padding=1,
-            ),
-            nn.BatchNorm2d(kernel_num),
-            nn.ReLU(),
-        )
-
-    def _linear(self, in_size, out_size, relu=True):
-        return nn.Sequential(
-            nn.Linear(in_size, out_size),
-            nn.ReLU(),
-        ) if relu else nn.Linear(in_size, out_size)
+    def generate(self, z):
+        return self.decoder(z)

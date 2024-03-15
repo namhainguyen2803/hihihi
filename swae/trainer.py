@@ -31,8 +31,8 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight = 5
-        self.weight_fsw = 1
+        self.weight = 10
+        self.weight_fsw = 0
 
     def train_on_batch(self, x, y):
         # reset gradients

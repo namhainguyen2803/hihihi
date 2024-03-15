@@ -5,14 +5,15 @@ import torch
 import torch.optim as optim
 import torchvision.utils as vutils
 from swae.distributions import rand, randn
-from swae.models.lsun import LSUNAutoencoder
+from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
-
+from swae.dataloader import *
+from swae.utils import *
 
 def main():
     # train args
-    parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch LSUN Example')
+    parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch CIFAR10 Example')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
     parser.add_argument('--img-size', type=int, default=64, metavar='S',
@@ -72,25 +73,24 @@ def main():
 
     # build train and test set data loaders
     train_loader = torch.utils.data.DataLoader(
-        datasets.LSUN(args.datadir, classes=['church_outdoor_train'],
-                      transform=transforms.Compose([
-                        transforms.Resize(args.img_size),
-                        transforms.CenterCrop(args.img_size),
-                        transforms.ToTensor()
-                      ])),
+        datasets.CIFAR10( "data/train/",
+                         train=True, download=True,
+                         transform=transforms.Compose([
+                             transforms.RandomCrop(32, padding=4),
+                             transforms.RandomHorizontalFlip(),
+                             transforms.ToTensor(),
+                         ])),
         batch_size=args.batch_size, shuffle=True, **dataloader_kwargs)
     test_loader = torch.utils.data.DataLoader(
-        datasets.LSUN(args.datadir, classes=['church_outdoor_val'],
-                      transform=transforms.Compose([
-                        transforms.Resize(args.img_size),
-                        transforms.CenterCrop(args.img_size),
-                        transforms.ToTensor()
-                      ])),
+        datasets.CIFAR10( "data/test/",
+                         train=False, download=True,
+                         transform=transforms.Compose([
+                             transforms.ToTensor(),
+                         ])),
         batch_size=32, shuffle=False, **dataloader_kwargs)
-    
 
     # create encoder and decoder
-    model = LSUNAutoencoder(embedding_dim=args.embedding_size).to(device)
+    model = CIFAR10Autoencoder(embedding_dim=args.embedding_size).to(device)
     print(model)
 
     # create optimizer
@@ -126,7 +126,7 @@ def main():
             trainer.weight *= 1.1
         # train autoencoder on train dataset
         for batch_idx, (x, y) in enumerate(train_loader, start=0):
-            batch = trainer.train_on_batch(x)
+            batch = trainer.train_on_batch(x, y)
             if (batch_idx + 1) % args.log_interval == 0:
                 print('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}'.format(
                         epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
@@ -136,11 +136,11 @@ def main():
         test_encode, test_targets, test_loss = list(), list(), 0.0
         with torch.no_grad():
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                test_evals = trainer.test_on_batch(x_test)
+                test_evals = trainer.test_on_batch(x_test, y_test)
                 test_encode.append(test_evals['encode'].detach())
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
-        test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
+
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
                 epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
@@ -149,7 +149,7 @@ def main():
         # save artifacts ever log epoch interval
         if (epoch + 1) % args.log_epoch_interval == 0:
             # save model
-            torch.save(model.state_dict(), '{}/mnist_epoch_{}.pth'.format(chkptdir, epoch + 1))
+            torch.save(model.state_dict(), '{}/cifar10_epoch_{}.pth'.format(chkptdir, epoch + 1))
             # save sample input and reconstruction
             vutils.save_image(x, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
             vutils.save_image(batch['decode'].detach(),
