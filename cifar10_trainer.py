@@ -126,7 +126,7 @@ def main():
             trainer.weight *= 1.1
         # train autoencoder on train dataset
         for batch_idx, (x, y) in enumerate(train_loader, start=0):
-            batch = trainer.train_on_batch(x, y)
+            batch = trainer.train_on_batch(x)
             if (batch_idx + 1) % args.log_interval == 0:
                 print('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}'.format(
                         epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
@@ -136,7 +136,7 @@ def main():
         test_encode, test_targets, test_loss = list(), list(), 0.0
         with torch.no_grad():
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                test_evals = trainer.test_on_batch(x_test, y_test)
+                test_evals = trainer.test_on_batch(x_test)
                 test_encode.append(test_evals['encode'].detach())
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
