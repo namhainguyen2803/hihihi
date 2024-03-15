@@ -117,3 +117,6 @@ class LSUNAutoencoder(nn.Module):
     def forward(self, x):
         z = self.encoder(x)
         return self.decoder(z), z
+
+    def generate(self, z):
+        return self.decoder(z)

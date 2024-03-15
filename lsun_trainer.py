@@ -33,6 +33,8 @@ def main():
                         help='weight of divergence (default: 10.0)')
     parser.add_argument('--distribution', type=str, default='normal', metavar='DIST',
                         help='Latent Distribution (default: normal)')
+    parser.add_argument('--optimizer', type=str, default='rmsprop',
+                        help='Optimizer (default: rmsprop)')
     parser.add_argument('--embedding-size', type=int, default=64, metavar='ES',
                         help='model embedding size (default: 64)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -66,6 +68,8 @@ def main():
         args.lr, args.beta1, args.beta2, args.distribution,
         device.type, args.seed
     ))
+
+
     # build train and test set data loaders
     train_loader = torch.utils.data.DataLoader(
         datasets.LSUN(args.datadir, classes=['church_outdoor_train'],
@@ -83,11 +87,24 @@ def main():
                         transforms.ToTensor()
                       ])),
         batch_size=32, shuffle=False, **dataloader_kwargs)
+    
+
     # create encoder and decoder
     model = LSUNAutoencoder(embedding_dim=args.embedding_size).to(device)
     print(model)
+
     # create optimizer
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    if args.optimizer == 'rmsprop':
+        optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
+    elif args.optimizer == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    elif args.optimizer == 'adamax':
+        optimizer = optim.Adamax(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    elif args.optimizer == 'adamW':
+        optimizer = optim.AdamW(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=args.lr)
+
     # determine latent distribution
     if args.distribution == 'uniform':
         distribution_fn = rand(args.embedding_size)
@@ -95,9 +112,11 @@ def main():
         distribution_fn = randn(args.embedding_size)
     else:
         raise('distribution {} not supported'.format(args.distribution))
+
     # create batch sliced_wasserstein autoencoder trainer
-    trainer = SWAEBatchTrainer(model, optimizer, distribution_fn,
-                               args.num_projections, weight=args.weight, device=device)
+    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer, distribution_fn=distribution_fn, num_classes=10,
+                               num_projections=args.num_projections, weight=args.weight, device=device)
+
     # put networks in training mode
     model.train()
     # train networks for n epochs
