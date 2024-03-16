@@ -48,7 +48,7 @@ class MNISTDataLoader:
             kind='fixed'
         )
 
-        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler, **self.dataloader_kwargs)
+        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
 
         instances_indices = torch.arange(len(self.test_dataset.targets))
         all_classes_indices = list()
@@ -64,7 +64,7 @@ class MNISTDataLoader:
             kind='fixed'
         )
 
-        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler, **self.dataloader_kwargs)
+        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler)
 
         # self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
 
