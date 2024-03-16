@@ -14,6 +14,7 @@ from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
 from swae.dataloader import *
 from swae.utils import *
+from evaluate import *
 
 def main():
     # train args
@@ -138,19 +139,14 @@ def main():
 
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
-            # avg_posterior_gap = [0 for _ in range(data_loader.num_classes)]
-            # avg_reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
-            # avg_list_l1 = [0 for _ in range(data_loader.num_classes)]
-
-            # for cls_id in range(data_loader.num_classes):
-            #     avg_posterior_gap[cls_id] = posterior_gap[cls_id] / num_instances[cls_id]
-            #     avg_reconstruction_loss[cls_id] = avg_reconstruction_loss[cls_id] / num_instances[cls_id]
-            #     avg_list_l1[cls_id] = avg_list_l1[cls_id] / num_instances[cls_id]
+            ws_score = wasserstein_evaluation(model=model, prior_distribution=distribution_fn, test_loader=test_loader,
+                                              device=device)
 
             print()
             print("############## EVALUATION ##############")
             print("Overall evaluation results:")
             print(f"Overall loss: {test_evals['loss'].item()}")
+            print(f"Wasserstein distance between generated images and real images: {ws_score}")
             print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
             print(f"SWD loss: {test_evals['swd_loss'].item()}")
             print(f"Fair_SWD loss: {test_evals['fsw_loss'].item()}")
