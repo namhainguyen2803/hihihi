@@ -27,8 +27,8 @@ def wasserstein_evaluation(model, prior_distribution, test_loader, device):
             list_real_images.append(flatten_images)
             list_generated_images.append(flatten_generated_images)
 
-        list_real_images = torch.cat(list_real_images, dim=0)
-        list_generated_images = torch.cat(list_generated_images, dim=0)
+        list_real_images = torch.cat(list_real_images, dim=0).cpu()
+        list_generated_images = torch.cat(list_generated_images, dim=0).cpu()
         ws = compute_true_Wasserstein(X=list_generated_images, Y=list_real_images, p=2)
 
         return ws
