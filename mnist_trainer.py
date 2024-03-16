@@ -140,7 +140,7 @@ def main():
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
             ws_score = wasserstein_evaluation(model=model, prior_distribution=distribution_fn, test_loader=test_loader,
-                                              device='cpu')
+                                              device=device)
 
             print()
             print("############## EVALUATION ##############")
