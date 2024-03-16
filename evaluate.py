@@ -16,7 +16,6 @@ def wasserstein_evaluation(model, prior_distribution, test_loader, device):
         model.eval()
         for images, labels in test_loader:
             images = images.to(device)
-            labels = labels.to(device)
 
             num_images = images.shape[0]
             generated_images = generate_image(model=model, prior_distribution=prior_distribution, num_images=num_images,
