@@ -38,7 +38,7 @@ def wasserstein_evaluation(model, prior_distribution, test_loader, device):
         return ws
 
 def fid_evaluation(model, prior_distribution, fid_stat, sample_path, device):
-    os.makedirs(sample_path)
+    # os.makedirs(sample_path)
 
     with torch.no_grad():
         gen_images = generate_image(model=model, prior_distribution=prior_distribution, num_images=30, device=device)
