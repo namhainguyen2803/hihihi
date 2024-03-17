@@ -27,7 +27,7 @@ FID_SPATIAL_NAME = "mixed_6/conv:0"
 def fid_evaluator_function(ref_batch, sample_batch):
     class Args:
         pass
-    
+
     args = Args()
     args.ref_batch = ref_batch
     args.sample_batch = sample_batch

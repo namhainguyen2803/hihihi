@@ -186,7 +186,7 @@ def main():
         print("************* FID EVALUATION *************")
         SAMPLE_PATH = 'generated_images/cifar10_epoch_{}'.format(epoch + 1)
         fid_evaluation(model=model, prior_distribution=distribution_fn,
-                       fid_stat="fid_stat/fid_stats_cifar10_train.npz", sample_path=SAMPLE_PATH, device=device)
+                       fid_stat="fid_stat/cifar10.npz", sample_path=SAMPLE_PATH, device=device)
         print("******************************************")
 
         # save artifacts ever log epoch interval
