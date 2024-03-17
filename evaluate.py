@@ -1,6 +1,8 @@
-import torch
 from swae.utils import *
-
+import numpy as np
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+import torch
 
 def generate_image(model, prior_distribution, num_images, device='cpu'):
     with torch.no_grad():
