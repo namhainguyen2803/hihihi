@@ -25,10 +25,10 @@ FID_SPATIAL_NAME = "mixed_6/conv:0"
 
 
 def fid_evaluator_function(ref_batch, sample_batch):
-    parser = argparse.ArgumentParser()
-    # parser.add_argument("ref_batch", help="path to reference batch npz file")
-    # parser.add_argument("sample_batch", help="path to sample batch npz file")
-    args = parser.parse_args()
+    class Args:
+        pass
+    
+    args = Args()
     args.ref_batch = ref_batch
     args.sample_batch = sample_batch
 
