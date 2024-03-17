@@ -200,12 +200,17 @@ def main():
 
             # save model
             torch.save(model.state_dict(), '{}/cifar10_epoch_{}.pth'.format(chkptdir, epoch + 1))
+
             # save sample input and reconstruction
             vutils.save_image(x, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+
             vutils.save_image(batch['decode'].detach(),
                               '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
                               normalize=True)
 
+            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
+            vutils.save_image(gen_image,
+                              '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
 if __name__ == '__main__':
     main()
