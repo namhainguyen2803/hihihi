@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 
 class MNISTDataLoader:
-    def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250, dataloader_kwargs=None):
+    def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250):
         self.test_loader = None
         self.train_loader = None
         self.train_dataset = None
@@ -14,7 +14,6 @@ class MNISTDataLoader:
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
         self.num_classes = 10
-        self.dataloader_kwargs = dataloader_kwargs
 
         self.create_dataset()
 
@@ -72,7 +71,7 @@ class MNISTDataLoader:
 
 
 class CIFAR10DataLoader:
-    def __init__(self, data_dir="data/", train_batch_size=80, test_batch_size=80, dataloader_kwargs=None):
+    def __init__(self, data_dir="data/", train_batch_size=80, test_batch_size=80):
         self.test_loader = None
         self.train_loader = None
         self.train_dataset = None
@@ -81,7 +80,6 @@ class CIFAR10DataLoader:
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
         self.num_classes = 10
-        self.dataloader_kwargs = dataloader_kwargs
 
         self.create_dataset()
 
@@ -119,7 +117,7 @@ class CIFAR10DataLoader:
             alpha=1,
             kind='fixed'
         )
-        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler, **self.dataloader_kwargs)
+        self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
 
         instances_indices = torch.arange(len(self.test_dataset.targets))
         all_classes_indices = list()
@@ -134,6 +132,6 @@ class CIFAR10DataLoader:
             alpha=1,
             kind='fixed'
         )
-        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler, **self.dataloader_kwargs)
+        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler)
 
         return self.train_loader, self.test_loader
