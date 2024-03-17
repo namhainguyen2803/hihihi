@@ -59,6 +59,7 @@ def main():
     os.makedirs(args.datadir, exist_ok=True)
     os.makedirs(imagesdir, exist_ok=True)
     os.makedirs(chkptdir, exist_ok=True)
+    os.makedirs('generated_images', exist_ok=True)
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -184,7 +185,7 @@ def main():
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
 
         print("************* FID EVALUATION *************")
-        SAMPLE_PATH = 'generated_images/cifar10_epoch_{}'.format(epoch + 1)
+        SAMPLE_PATH = 'generated_images/cifar10_epoch_{}.npz'.format(epoch + 1)
         fid_evaluation(model=model, prior_distribution=distribution_fn,
                        fid_stat="/kaggle/input/cifar10/cifar10.npz", sample_path=SAMPLE_PATH, device=device)
         print("******************************************")
