@@ -42,10 +42,8 @@ def fid_evaluation(model, prior_distribution, fid_stat, sample_path, device):
 
     with torch.no_grad():
         gen_images = generate_image(model=model, prior_distribution=prior_distribution, num_images=50000, device=device)
-        print(gen_images)
         print(check_range(gen_images))
         gen_images = (gen_images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
-        print(gen_images)
         np.savez(sample_path, gen_images)
         fid_evaluator_function(ref_batch=fid_stat, sample_batch=sample_path)
 
