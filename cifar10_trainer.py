@@ -4,13 +4,16 @@ import os
 import torch
 import torch.optim as optim
 import torchvision.utils as vutils
+from sklearn.manifold import TSNE
+
+from evaluate import wasserstein_evaluation, fid_evaluation
 from swae.distributions import rand, randn
 from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
 from swae.dataloader import *
 from swae.utils import *
-from evaluate import *
+import matplotlib.pyplot as plt
 
 def main():
     # train args
@@ -123,7 +126,7 @@ def main():
                         batch['loss'].item()))
 
 
-        # evaluate autoencoder on test dataset
+        # evalutate_fid autoencoder on test dataset
         # keep track swd gap of each gap, reconstruction loss of each gap
         test_encode, test_targets, test_loss = list(), list(), 0.0
         posterior_gap = [0 for _ in range(data_loader.num_classes)]
@@ -179,6 +182,12 @@ def main():
                 epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
                 test_loss))
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
+
+        print("************* FID EVALUATION *************")
+        SAMPLE_PATH = 'generated_images/cifar10_epoch_{}'.format(epoch + 1)
+        fid_evaluation(model=model, prior_distribution=distribution_fn,
+                       fid_stat="fid_stat/fid_stats_cifar10_train.npz", sample_path=SAMPLE_PATH, device=device)
+        print("******************************************")
 
         # save artifacts ever log epoch interval
         if (epoch + 1) % args.log_epoch_interval == 0:

@@ -1,8 +1,10 @@
+import os
 from swae.utils import *
 import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import torch
+from fid_evaluator import fid_evaluator_function
 
 def generate_image(model, prior_distribution, num_images, device='cpu'):
     with torch.no_grad():
@@ -34,3 +36,14 @@ def wasserstein_evaluation(model, prior_distribution, test_loader, device):
         ws = compute_true_Wasserstein(X=list_generated_images, Y=list_real_images, p=2)
 
         return ws
+
+def fid_evaluation(model, prior_distribution, fid_stat, sample_path, device):
+    os.makedirs(sample_path)
+
+    with torch.no_grad():
+        gen_images = generate_image(model=model, prior_distribution=prior_distribution, num_images=30, device=device)
+        gen_images = (gen_images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
+
+        np.savez(sample_path, gen_images)
+        fid_evaluator_function(ref_batch=fid_stat, sample_batch=sample_path)
+

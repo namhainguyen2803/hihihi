@@ -3,6 +3,8 @@ import os
 
 import matplotlib as mpl
 
+from evaluate import wasserstein_evaluation
+
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import torch
@@ -14,7 +16,6 @@ from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
 from swae.dataloader import *
 from swae.utils import *
-from evaluate import *
 
 def main():
     # train args
@@ -110,7 +111,7 @@ def main():
                     (batch_idx + 1), len(train_loader),
                     batch['loss'].item()))
 
-        # evaluate autoencoder on test dataset
+        # evalutate_fid autoencoder on test dataset
         # keep track swd gap of each gap, reconstruction loss of each gap
         test_encode, test_targets, test_loss = list(), list(), 0.0
         posterior_gap = [0 for _ in range(data_loader.num_classes)]
