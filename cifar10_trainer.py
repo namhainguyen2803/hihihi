@@ -8,9 +8,8 @@ from swae.distributions import rand, randn
 from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
-from swae.dataloader import *
 from swae.utils import *
-
+from dataloader.dataloader import *
 def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch CIFAR10 Example')
@@ -72,7 +71,7 @@ def main():
 
 
     # build train and test set data loaders
-    data_loader = CIFAR10DataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size, dataloader_kwargs=dataloader_kwargs)
+    data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
     train_loader, test_loader = data_loader.create_dataloader()
 
     # create encoder and decoder
