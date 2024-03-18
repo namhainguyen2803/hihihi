@@ -32,7 +32,7 @@ class SWAEBatchTrainer:
         self.num_classes = num_classes
 
         self.weight = 3
-        self.weight_fsw = 1
+        self.weight_fsw = 0
 
     def train_on_batch(self, x, y):
         # reset gradients
