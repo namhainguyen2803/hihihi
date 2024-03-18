@@ -119,14 +119,53 @@ def main():
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
 
-        # evaluate autoencoder on test dataset
+        # evalutate_fid autoencoder on test dataset
+        # keep track swd gap of each gap, reconstruction loss of each gap
         test_encode, test_targets, test_loss = list(), list(), 0.0
+        posterior_gap = [0 for _ in range(data_loader.num_classes)]
+        reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
+        list_l1 = [0 for _ in range(data_loader.num_classes)]
+        num_instances = [0 for _ in range(data_loader.num_classes)]
+
         with torch.no_grad():
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
                 test_evals = trainer.test_on_batch(x_test, y_test)
+
                 test_encode.append(test_evals['encode'].detach())
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
+
+                # update evaluation incrementally
+                for cls_id in range(data_loader.num_classes):
+                    if cls_id in test_evals['list_recon'].keys():
+                        reconstruction_loss[cls_id] += test_evals['list_recon'][cls_id]
+
+                    if cls_id in test_evals['list_swd'].keys():
+                        posterior_gap[cls_id] += test_evals['list_swd'][cls_id]
+
+                    if cls_id in test_evals['list_l1'].keys():
+                        list_l1[cls_id] += test_evals['list_l1'][cls_id]
+
+                    num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
+
+            print()
+            print("############## EVALUATION ##############")
+            print("Overall evaluation results:")
+            print(f"Overall loss: {test_evals['loss'].item()}")
+            print(f"Wasserstein distance between generated images and real images: {ws_score}")
+            print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
+            print(f"SWD loss: {test_evals['swd_loss'].item()}")
+            print(f"Fair_SWD loss: {test_evals['fsw_loss'].item()}")
+            print(f"L1 loss: {test_evals['l1_loss'].item()}")
+
+            print()
+            print("Evaluation of each class:")
+            print(f"Reconstruction loss: {reconstruction_loss}")
+            print(f"L1 loss: {list_l1}")
+            print(f"Posterior gap: {posterior_gap}")
+
+            print("########################################")
+            print()
 
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
