@@ -152,7 +152,7 @@ def main():
             print("############## EVALUATION ##############")
             print("Overall evaluation results:")
             print(f"Overall loss: {test_evals['loss'].item()}")
-            print(f"Wasserstein distance between generated images and real images: {ws_score}")
+            # print(f"Wasserstein distance between generated images and real images: {ws_score}")
             print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
             print(f"SWD loss: {test_evals['swd_loss'].item()}")
             print(f"Fair_SWD loss: {test_evals['fsw_loss'].item()}")
