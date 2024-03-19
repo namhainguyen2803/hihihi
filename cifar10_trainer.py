@@ -4,6 +4,8 @@ import os
 import torch
 import torch.optim as optim
 import torchvision.utils as vutils
+
+from evaluate import calculate_fairness
 from swae.distributions import rand, randn
 from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.trainer import SWAEBatchTrainer
@@ -17,7 +19,7 @@ def main():
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
     parser.add_argument('--batch-size', type=int, default=80, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=50, metavar='N',
+    parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
                         help='learning rate (default: 0.001)')
@@ -160,9 +162,11 @@ def main():
 
             print()
             print("Evaluation of each class:")
-            print(f"Reconstruction loss: {reconstruction_loss}")
-            print(f"L1 loss: {list_l1}")
-            print(f"Posterior gap: {posterior_gap}")
+            print(f"Fairness of Reconstruction loss: {calculate_fairness(reconstruction_loss)}, {reconstruction_loss}")
+            print()
+            print(f"Fairness of L1 loss: {calculate_fairness(list_l1)}, {list_l1}")
+            print()
+            print(f"Fairness of Posterior gap: {calculate_fairness(posterior_gap)}, {posterior_gap}")
 
             print("########################################")
             print()

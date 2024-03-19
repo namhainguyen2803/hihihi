@@ -32,3 +32,9 @@ def wasserstein_evaluation(model, prior_distribution, test_loader, device):
         ws = compute_true_Wasserstein(X=list_generated_images, Y=list_real_images, p=2)
 
         return ws
+
+
+def calculate_fairness(list_metric, p=2):
+    tensor_ = torch.tensor(list_metric)
+    avg_ = torch.sum(tensor_) / len(list_metric)
+    return torch.sum(torch.pow((tensor_ - avg_), p))
