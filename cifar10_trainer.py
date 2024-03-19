@@ -47,7 +47,7 @@ def main():
                         help='random seed (default: 7)')
     parser.add_argument('--log-interval', type=int, default=25, metavar='N',
                         help='number of batches to log training status (default: 25)')
-    parser.add_argument('--log-epoch-interval', type=int, default=1, metavar='N',
+    parser.add_argument('--log-epoch-interval', type=int, default=2, metavar='N',
                         help='number of epochs to save training artifacts (default: 1)')
     args = parser.parse_args()
     # create output directory
