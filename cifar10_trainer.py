@@ -25,6 +25,12 @@ def main():
                         help='learning rate (default: 0.001)')
     parser.add_argument('--alpha', type=float, default=0.9, metavar='A',
                         help='RMSprop alpha/rho (default: 0.9)')
+
+    parser.add_argument('--weight_swd', type=float, default=3,
+                        help='weight of swd (default: 3)')
+    parser.add_argument('--weight_fsw', type=float, default=1,
+                        help='weight of fsw (default: 1)')
+
     parser.add_argument('--beta1', type=float, default=0.5, metavar='B1',
                         help='Adam beta1 (default: 0.5)')
     parser.add_argument('--beta2', type=float, default=0.999, metavar='B2',
@@ -101,8 +107,12 @@ def main():
         raise('distribution {} not supported'.format(args.distribution))
 
     # create batch sliced_wasserstein autoencoder trainer
-    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer, distribution_fn=distribution_fn, num_classes=10,
-                               num_projections=args.num_projections, weight=args.weight, device=device)
+    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer,
+                               distribution_fn=distribution_fn,
+                               num_classes=data_loader.num_classes,
+                               num_projections=args.num_projections,
+                               weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
+                               device=device)
 
     # put networks in training mode
     model.train()

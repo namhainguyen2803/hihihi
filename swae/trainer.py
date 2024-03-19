@@ -21,7 +21,7 @@ class SWAEBatchTrainer:
     """
 
     def __init__(self, autoencoder, optimizer, distribution_fn, num_classes=10,
-                 num_projections=50, p=2, weight=5, device=None):
+                 num_projections=50, p=2, weight_swd=3, weight_fsw=1, device=None):
         self.model_ = autoencoder
         self.optimizer = optimizer
         self._distribution_fn = distribution_fn
@@ -31,8 +31,8 @@ class SWAEBatchTrainer:
         self._device = device if device else torch.device('cpu')
         self.num_classes = num_classes
 
-        self.weight = 3
-        self.weight_fsw = 0
+        self.weight = weight_swd
+        self.weight_fsw = weight_fsw
 
     def train_on_batch(self, x, y):
         # reset gradients
