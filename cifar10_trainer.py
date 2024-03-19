@@ -197,7 +197,7 @@ def main():
             tsne = TSNE(n_components=2, random_state=42)
             tsne_result = tsne.fit_transform(test_encode)
 
-            plt.figure(figsize=(10, 8))
+            plt.figure(figsize=(10, 10))
             plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
             plt.title('t-SNE Visualization')
             plt.xlabel('t-SNE Component 1')
