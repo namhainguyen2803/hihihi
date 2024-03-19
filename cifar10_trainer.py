@@ -1,9 +1,10 @@
 import argparse
 import os
-
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 import torchvision.utils as vutils
+from sklearn.manifold import TSNE
 
 from evaluate import calculate_fairness
 from swae.distributions import rand, randn
@@ -12,6 +13,8 @@ from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
 from swae.utils import *
 from dataloader.dataloader import *
+
+
 def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch CIFAR10 Example')
@@ -188,13 +191,35 @@ def main():
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
         # save artifacts ever log epoch interval
         if (epoch + 1) % args.log_epoch_interval == 0:
+            ################## PLOT ######################
+            test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
+
+            tsne = TSNE(n_components=2, random_state=42)
+            tsne_result = tsne.fit_transform(test_encode)
+
+            plt.figure(figsize=(10, 8))
+            plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
+            plt.title('t-SNE Visualization')
+            plt.xlabel('t-SNE Component 1')
+            plt.ylabel('t-SNE Component 2')
+            plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+            plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+            plt.colorbar(label='Target')
+            plt.close()
+
             # save model
             torch.save(model.state_dict(), '{}/cifar10_epoch_{}.pth'.format(chkptdir, epoch + 1))
+
             # save sample input and reconstruction
             vutils.save_image(x, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+
             vutils.save_image(batch['decode'].detach(),
                               '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
                               normalize=True)
+
+            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
+            vutils.save_image(gen_image,
+                              '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
 
 if __name__ == '__main__':
