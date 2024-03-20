@@ -21,7 +21,7 @@ class SWAEBatchTrainer:
     """
 
     def __init__(self, autoencoder, optimizer, distribution_fn, num_classes=10,
-                 num_projections=50, p=2, weight_swd=1, weight_fsw=1, device=None):
+                 num_projections=50, p=2, weight_swd=1, weight_fsw=1, device=None, method="FEFBSW"):
         self.model_ = autoencoder
         self.optimizer = optimizer
         self._distribution_fn = distribution_fn
@@ -33,6 +33,8 @@ class SWAEBatchTrainer:
 
         self.weight = weight_swd
         self.weight_fsw = weight_fsw
+
+        self.method = method
 
     def train_on_batch(self, x, y):
         # reset gradients
@@ -130,7 +132,25 @@ class SWAEBatchTrainer:
         for cls in range(self.num_classes):
             list_z_posterior.append(z_posterior[y == cls])
 
-        fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, device=self._device)
+        fsw = 0
+
+        if self.method == "FEFBSW":
+            fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+        elif self.method == "lowerbound_FEFBSW":
+            fsw = lowerbound_FEFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+
+        elif self.method == "EFBSW":
+            fsw = EFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+        elif self.method == "lowerbound_EFBSW":
+            fsw = lowerbound_EFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+
+        elif self.method == "FBSW":
+            fsw = FBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+        elif self.method == "lowerboundFBSW":
+            fsw = lowerboundFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+
+        elif self.method == "BSW":
+            fsw = BSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
 
         loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd + l1
 

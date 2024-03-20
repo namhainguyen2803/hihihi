@@ -44,6 +44,10 @@ def main():
                         help='weight of divergence (default: 10.0)')
     parser.add_argument('--distribution', type=str, default='normal', metavar='DIST',
                         help='Latent Distribution (default: normal)')
+
+    parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
+                        help='method (default: FEFBSW)')
+
     parser.add_argument('--optimizer', type=str, default='rmsprop',
                         help='Optimizer (default: rmsprop)')
     parser.add_argument('--embedding-size', type=int, default=64, metavar='ES',
@@ -115,7 +119,7 @@ def main():
                                num_classes=data_loader.num_classes,
                                num_projections=args.num_projections,
                                weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
-                               device=device)
+                               device=device, method=args.method)
 
     # put networks in training mode
     model.train()
