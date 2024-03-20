@@ -7,12 +7,13 @@ import numpy as np
 class IMBALANCECIFAR10(torchvision.datasets.CIFAR10):
     cls_num = 10
 
-    def __init__(self, root, imb_type='exp', imb_factor=0.01, rand_number=0, train=True,
+    def __init__(self, root, imb_type='exp', imb_factor=0.05, rand_number=0, train=True,
                  transform=None, target_transform=None,
                  download=False):
         super(IMBALANCECIFAR10, self).__init__(root, train, transform, target_transform, download)
         np.random.seed(rand_number)
         img_num_list = self.get_img_num_per_cls(self.cls_num, imb_type, imb_factor)
+        print(f"Number of images per class: {img_num_list}")
         self.gen_imbalanced_data(img_num_list)
 
     def get_img_num_per_cls(self, cls_num, imb_type, imb_factor):
