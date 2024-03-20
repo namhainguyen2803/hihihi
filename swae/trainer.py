@@ -152,6 +152,9 @@ class SWAEBatchTrainer:
         elif self.method == "BSW":
             fsw = BSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
 
+        else:
+            fsw = 0
+
         loss = bce + float(self.weight_fsw) * fsw + float(self.weight) * swd + l1
 
         return {
