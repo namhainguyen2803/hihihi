@@ -40,7 +40,7 @@ def calculate_fairness(list_metric, p=2):
     return torch.sum(torch.pow(torch.abs((tensor_ - avg_)), p))
 
 
-def calculate_pairwise_swd(list_features, list_labels, num_classes, device):
+def calculate_pairwise_swd(list_features, list_labels, num_classes, device, num_projections=200):
     with torch.no_grad():
         dist_pairwise = list()
         features_dict = dict()
@@ -59,7 +59,7 @@ def calculate_pairwise_swd(list_features, list_labels, num_classes, device):
     return torch.sum(torch.tensor(dist_pairwise)) / len(dist_pairwise)
 
 
-def calculate_pairwise_swd_2(list_features, list_labels, prior_distribution, num_classes, device):
+def calculate_pairwise_swd_2(list_features, list_labels, prior_distribution, num_classes, device, num_projections=200):
     with torch.no_grad():
         dist_swd = dict()
         for cls_id in range(num_classes):
@@ -68,7 +68,7 @@ def calculate_pairwise_swd_2(list_features, list_labels, prior_distribution, num
 
             swd = sliced_wasserstein_distance(encoded_samples=features_cls,
                                               distribution_samples=z_samples,
-                                              num_projections=200,
+                                              num_projections=num_projections,
                                               p=2,
                                               device=device)
 

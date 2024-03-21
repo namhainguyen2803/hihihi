@@ -40,6 +40,7 @@ def main():
                         help='Adam beta2 (default: 0.999)')
     parser.add_argument('--num-projections', type=int, default=500, metavar='NP',
                         help='number of projections (default: 500)')
+    
     parser.add_argument('--weight', type=float, default=10.0, metavar='W',
                         help='weight of divergence (default: 10.0)')
     parser.add_argument('--distribution', type=str, default='normal', metavar='DIST',
@@ -190,14 +191,16 @@ def main():
         pairwise_swd = calculate_pairwise_swd(list_features=test_encode,
                                               list_labels=test_targets,
                                               num_classes=data_loader.num_classes,
-                                              device=device)
+                                              device=device,
+                                              num_projections=args.num_projections)
         print(f"Pairwise swd distances among all classes: {pairwise_swd}")
 
         pairwise_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
                                                   list_labels=test_targets,
                                                   prior_distribution=distribution_fn,
                                                   num_classes=data_loader.num_classes,
-                                                  device=device)
+                                                  device=device,
+                                                  num_projections=args.num_projections)
         print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
 
         test_loss /= len(test_loader)
