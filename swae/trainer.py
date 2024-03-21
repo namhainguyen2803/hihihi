@@ -21,7 +21,7 @@ class SWAEBatchTrainer:
     """
 
     def __init__(self, autoencoder, optimizer, distribution_fn, num_classes=10,
-                 num_projections=50, p=2, weight_swd=1, weight_fsw=1, device=None, method="FEFBSW"):
+                 num_projections=200, p=2, weight_swd=1, weight_fsw=1, device=None, method="FEFBSW"):
         self.model_ = autoencoder
         self.optimizer = optimizer
         self._distribution_fn = distribution_fn
@@ -53,10 +53,6 @@ class SWAEBatchTrainer:
             y = y.to(self._device)
             recon_x, z_posterior = self.model_(x)
 
-            batch_size = x.size(0)
-
-            list_z = list()
-
             list_recon_loss = dict()
             list_swd = dict()
             list_l1 = dict()
@@ -68,7 +64,6 @@ class SWAEBatchTrainer:
                 x_cls = x[y == cls]
 
                 z_cls = z_posterior[y == cls]
-                list_z.append(z_cls)
 
                 z_sample = self._distribution_fn(z_cls.shape[0]).to(self._device)
 
@@ -87,14 +82,7 @@ class SWAEBatchTrainer:
                 l1_loss += l1
                 swd_loss += latent_ws_dist
 
-            bce_loss /= batch_size
-            l1_loss /= batch_size
-            swd_loss /= batch_size
-
-            z_prior = self._distribution_fn(batch_size).to(self._device)
-            fsw = FEFBSW_list(Xs=list_z, X=z_prior, device=self._device)
-
-            loss = bce_loss + float(self.weight_fsw) * fsw + float(self.weight) * swd_loss + l1_loss
+            loss = bce_loss + float(self.weight) * swd_loss + l1_loss
 
             return {
                 'list_recon': list_recon_loss,
@@ -105,7 +93,6 @@ class SWAEBatchTrainer:
                 'recon_loss':bce_loss,
                 'swd_loss': swd_loss,
                 'l1_loss': l1_loss,
-                'fsw_loss': fsw,
 
                 'encode': z_posterior,
                 'decode': recon_x
@@ -135,22 +122,22 @@ class SWAEBatchTrainer:
         fsw = 0
 
         if self.method == "FEFBSW":
-            fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+            fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
         elif self.method == "lowerbound_FEFBSW":
-            fsw = lowerbound_FEFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+            fsw = lowerbound_FEFBSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
 
         elif self.method == "EFBSW":
-            fsw = EFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+            fsw = EFBSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
         elif self.method == "lowerbound_EFBSW":
-            fsw = lowerbound_EFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+            fsw = lowerbound_EFBSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
 
         elif self.method == "FBSW":
-            fsw = FBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+            fsw = FBSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
         elif self.method == "lowerboundFBSW":
-            fsw = lowerboundFBSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+            fsw = lowerboundFBSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
 
         elif self.method == "BSW":
-            fsw = BSW_list(Xs=list_z_posterior, X=z_prior, L=200, device=self._device)
+            fsw = BSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
 
         else:
             fsw = 0

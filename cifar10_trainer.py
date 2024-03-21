@@ -6,7 +6,7 @@ import torch.optim as optim
 import torchvision.utils as vutils
 from sklearn.manifold import TSNE
 
-from evaluate import calculate_fairness
+from evaluate import calculate_fairness, calculate_pairwise_swd, calculate_pairwise_swd_2
 from swae.distributions import rand, randn
 from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.trainer import SWAEBatchTrainer
@@ -72,7 +72,8 @@ def main():
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    dataloader_kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {'num_workers': args.num_workers, 'pin_memory': False}
+    dataloader_kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {'num_workers': args.num_workers,
+                                                                                 'pin_memory': False}
     # set random seed
     torch.manual_seed(args.seed)
     if use_cuda:
@@ -83,7 +84,6 @@ def main():
         args.lr, args.beta1, args.beta2, args.distribution,
         device.type, args.seed
     ))
-
 
     # build train and test set data loaders
     data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
@@ -111,7 +111,7 @@ def main():
     elif args.distribution == 'normal':
         distribution_fn = randn(args.embedding_size)
     else:
-        raise('distribution {} not supported'.format(args.distribution))
+        raise ('distribution {} not supported'.format(args.distribution))
 
     # create batch sliced_wasserstein autoencoder trainer
     trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer,
@@ -134,9 +134,9 @@ def main():
             batch = trainer.train_on_batch(x, y)
             if (batch_idx + 1) % args.log_interval == 0:
                 print('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}'.format(
-                        epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
-                        (batch_idx + 1), len(train_loader),
-                        batch['loss'].item()))
+                    epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
+                    (batch_idx + 1), len(train_loader),
+                    batch['loss'].item()))
 
         # evalutate_fid autoencoder on test dataset
         # keep track swd gap of each gap, reconstruction loss of each gap
@@ -174,7 +174,6 @@ def main():
             # print(f"Wasserstein distance between generated images and real images: {ws_score}")
             print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
             print(f"SWD loss: {test_evals['swd_loss'].item()}")
-            print(f"Fair_SWD loss: {test_evals['fsw_loss'].item()}")
             print(f"L1 loss: {test_evals['l1_loss'].item()}")
 
             print()
@@ -184,20 +183,33 @@ def main():
             print(f"Fairness of L1 loss: {calculate_fairness(list_l1)}, {list_l1}")
             print()
             print(f"Fairness of Posterior gap: {calculate_fairness(posterior_gap)}, {posterior_gap}")
-
             print("########################################")
             print()
 
+        test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+        pairwise_swd = calculate_pairwise_swd(list_features=test_encode,
+                                              list_labels=test_targets,
+                                              num_classes=data_loader.num_classes,
+                                              device=device)
+        print(f"Pairwise swd distances among all classes: {pairwise_swd}")
+
+        pairwise_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
+                                                  list_labels=test_targets,
+                                                  prior_distribution=distribution_fn,
+                                                  num_classes=data_loader.num_classes,
+                                                  device=device)
+        print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
+
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
-                epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
-                test_loss))
+            epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
+            test_loss))
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
         # save artifacts ever log epoch interval
         if (epoch + 1) % args.log_epoch_interval == 0:
             ################## PLOT ######################
-            test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
 
+            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
             tsne = TSNE(n_components=2, random_state=42)
             tsne_result = tsne.fit_transform(test_encode)
 

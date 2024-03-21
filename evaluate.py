@@ -38,3 +38,46 @@ def calculate_fairness(list_metric, p=2):
     tensor_ = torch.tensor(list_metric)
     avg_ = torch.sum(tensor_) / len(list_metric)
     return torch.sum(torch.pow(torch.abs((tensor_ - avg_)), p))
+
+
+def calculate_pairwise_swd(list_features, list_labels, num_classes, device):
+    with torch.no_grad():
+        dist_pairwise = list()
+        features_dict = dict()
+        for cls_id in range(num_classes):
+            features_dict[cls_id] = list_features[list_labels == cls_id]
+
+        for cls_id_i in range(num_classes):
+            for cls_id_j in range(cls_id_i + 1, num_classes):
+                swd = sliced_wasserstein_distance(encoded_samples=features_dict[cls_id_i],
+                                                  distribution_samples=features_dict[cls_id_j],
+                                                  num_projections=200,
+                                                  p=2,
+                                                  device=device)
+                dist_pairwise.append(swd)
+
+    return torch.sum(torch.tensor(dist_pairwise)) / len(dist_pairwise)
+
+
+def calculate_pairwise_swd_2(list_features, list_labels, prior_distribution, num_classes, device):
+    with torch.no_grad():
+        dist_swd = dict()
+        for cls_id in range(num_classes):
+            features_cls = list_features[list_labels == cls_id]
+            z_samples = prior_distribution(features_cls.shape[0])
+
+            swd = sliced_wasserstein_distance(encoded_samples=features_cls,
+                                              distribution_samples=z_samples,
+                                              num_projections=200,
+                                              p=2,
+                                              device=device)
+
+            dist_swd[cls_id] = swd
+
+        dist_pairwise = list()
+        for cls_id_i in range(num_classes):
+            for cls_id_j in range(cls_id_i + 1, num_classes):
+                a = torch.abs(dist_swd[cls_id_i] - dist_swd[cls_id_j])
+                dist_pairwise.append(a)
+
+    return torch.sum(torch.tensor(dist_pairwise)) / len(dist_pairwise)
