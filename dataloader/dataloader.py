@@ -19,7 +19,8 @@ class CIFAR10LTDataLoader:
 
     def create_dataset(self):
 
-        train_set = IMBALANCECIFAR10(self.data_dir + "train/",
+        train_set = IMBALANCECIFAR10(root=self.data_dir + "train/",
+                                     imb_type='exp', imb_factor=0.01,
                                      train=True, download=True,
                                      transform=transforms.Compose([
                                          transforms.RandomCrop(32, padding=4),
@@ -28,6 +29,7 @@ class CIFAR10LTDataLoader:
                                      ]))
 
         test_set = IMBALANCECIFAR10(self.data_dir + "test/",
+                                    imb_type='exp', imb_factor=1,
                                     train=False, download=True,
                                     transform=transforms.Compose([
                                         transforms.ToTensor()

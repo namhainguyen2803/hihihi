@@ -37,4 +37,4 @@ def wasserstein_evaluation(model, prior_distribution, test_loader, device):
 def calculate_fairness(list_metric, p=2):
     tensor_ = torch.tensor(list_metric)
     avg_ = torch.sum(tensor_) / len(list_metric)
-    return torch.sum(torch.pow((tensor_ - avg_), p))
+    return torch.sum(torch.pow(torch.abs((tensor_ - avg_)), p))
