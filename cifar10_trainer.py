@@ -40,7 +40,7 @@ def main():
                         help='Adam beta2 (default: 0.999)')
     parser.add_argument('--num-projections', type=int, default=500, metavar='NP',
                         help='number of projections (default: 500)')
-    
+
     parser.add_argument('--weight', type=float, default=10.0, metavar='W',
                         help='weight of divergence (default: 10.0)')
     parser.add_argument('--distribution', type=str, default='normal', metavar='DIST',
@@ -171,11 +171,11 @@ def main():
             print()
             print("############## EVALUATION ##############")
             print("Overall evaluation results:")
-            print(f"Overall loss: {test_evals['loss'].item()}")
+            print(f"Overall loss: {test_loss / len(test_loader)}")
             # print(f"Wasserstein distance between generated images and real images: {ws_score}")
-            print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
-            print(f"SWD loss: {test_evals['swd_loss'].item()}")
-            print(f"L1 loss: {test_evals['l1_loss'].item()}")
+            print(f"Reconstruction loss: {test_evals['recon_loss'].item() / len(test_loader)}")
+            print(f"SWD loss: {test_evals['swd_loss'].item() / len(test_loader)}")
+            print(f"L1 loss: {test_evals['l1_loss'].item() / len(test_loader)}")
 
             print()
             print("Evaluation of each class:")
