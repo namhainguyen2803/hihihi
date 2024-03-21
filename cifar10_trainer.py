@@ -122,6 +122,7 @@ def main():
                                weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
                                device=device, method=args.method)
 
+    list_fairness = list()
     # put networks in training mode
     model.train()
     # train networks for n epochs
@@ -188,12 +189,12 @@ def main():
             print()
 
         test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-        pairwise_swd = calculate_pairwise_swd(list_features=test_encode,
-                                              list_labels=test_targets,
-                                              num_classes=data_loader.num_classes,
-                                              device=device,
-                                              num_projections=args.num_projections)
-        print(f"Pairwise swd distances among all classes: {pairwise_swd}")
+        # pairwise_swd = calculate_pairwise_swd(list_features=test_encode,
+        #                                       list_labels=test_targets,
+        #                                       num_classes=data_loader.num_classes,
+        #                                       device=device,
+        #                                       num_projections=args.num_projections)
+        # print(f"Pairwise swd distances among all classes: {pairwise_swd}")
 
         pairwise_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
                                                   list_labels=test_targets,
@@ -202,6 +203,7 @@ def main():
                                                   device=device,
                                                   num_projections=args.num_projections)
         print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
+        list_fairness.append(pairwise_swd_2)
 
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
@@ -241,5 +243,18 @@ def main():
                               '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
 
+    # Create x-axis values (indices of the list)
+    iterations = range(1, len(list_fairness) + 1)
+
+    # Create a new figure
+    plt.figure(figsize=(8, 6))  # Width, Height in inches
+
+    # Plot the sequence
+    plt.plot(iterations, list_fairness, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Fairness')
+    plt.title(f'Fairness convergence plot of {args.method}')
+    plt.grid(True)
+    plt.show()
 if __name__ == '__main__':
     main()

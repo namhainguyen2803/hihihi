@@ -51,7 +51,7 @@ def calculate_pairwise_swd(list_features, list_labels, num_classes, device, num_
             for cls_id_j in range(cls_id_i + 1, num_classes):
                 swd = sliced_wasserstein_distance(encoded_samples=features_dict[cls_id_i],
                                                   distribution_samples=features_dict[cls_id_j],
-                                                  num_projections=200,
+                                                  num_projections=num_projections,
                                                   p=2,
                                                   device=device)
                 dist_pairwise.append(swd)
