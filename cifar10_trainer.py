@@ -247,7 +247,7 @@ def main():
     iterations = range(1, len(list_fairness) + 1)
 
     # Create a new figure
-    plt.figure(figsize=(8, 6))  # Width, Height in inches
+    plt.figure(figsize=(10, 10))  # Width, Height in inches
 
     # Plot the sequence
     plt.plot(iterations, list_fairness, marker='o', linestyle='-')
