@@ -255,6 +255,8 @@ def main():
     plt.ylabel('Fairness')
     plt.title(f'Fairness convergence plot of {args.method}')
     plt.grid(True)
-    plt.show()
+    plt.savefig('{}/aaa_fairness_convergence.png'.format(imagesdir))
+    plt.close()
+
 if __name__ == '__main__':
     main()
