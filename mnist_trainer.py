@@ -12,7 +12,7 @@ from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
-from swae.dataloader import *
+from dataloader.dataloader import *
 from swae.utils import *
 from evaluate import *
 
@@ -24,16 +24,31 @@ def main():
     parser.add_argument('--batch-size', type=int, default=500, metavar='N',
                         help='input batch size for training (default: 500)')
 
-    parser.add_argument('--epochs', type=int, default=50, metavar='N',
+    parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 30)')
-    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                         help='learning rate (default: 0.001)')
+
+    parser.add_argument('--weight_swd', type=float, default=1,
+                        help='weight of swd (default: 1)')
+    parser.add_argument('--weight_fsw', type=float, default=1,
+                        help='weight of fsw (default: 1)')
+    parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
+                        help='method (default: FEFBSW)')
+
     parser.add_argument('--alpha', type=float, default=0.9, metavar='A',
                         help='RMSprop alpha/rho (default: 0.9)')
+    parser.add_argument('--beta1', type=float, default=0.5, metavar='B1',
+                        help='Adam beta1 (default: 0.5)')
+    parser.add_argument('--beta2', type=float, default=0.999, metavar='B2',
+                        help='Adam beta2 (default: 0.999)')
+
     parser.add_argument('--distribution', type=str, default='circle', metavar='DIST',
                         help='Latent Distribution (default: circle)')
-    parser.add_argument('--optimizer', type=str, default='rmsprop',
-                        help='Optimizer (default: rmsprop)')
+
+    parser.add_argument('--optimizer', type=str, default='adam',
+                        help='Optimizer (default: adam)')
+
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--num-workers', type=int, default=8, metavar='N',
@@ -64,7 +79,7 @@ def main():
     ))
 
     # build train and test set data loaders
-    data_loader = MNISTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+    data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
     train_loader, test_loader = data_loader.create_dataloader()
 
     # create encoder and decoder
@@ -74,11 +89,11 @@ def main():
     if args.optimizer == 'rmsprop':
         optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
     elif args.optimizer == 'adam':
-        optimizer = optim.Adam(model.parameters(), lr=args.lr)
+        optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
     elif args.optimizer == 'adamax':
-        optimizer = optim.Adamax(model.parameters(), lr=args.lr)
+        optimizer = optim.Adamax(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
     elif args.optimizer == 'adamW':
-        optimizer = optim.AdamW(model.parameters(), lr=args.lr)
+        optimizer = optim.AdamW(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr)
 
@@ -91,8 +106,14 @@ def main():
         distribution_fn = rand_uniform2d
 
     # create batch sliced_wasserstein autoencoder trainer
-    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer, num_classes=10, distribution_fn=distribution_fn,
-                               device=device)
+    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer,
+                               distribution_fn=distribution_fn,
+                               num_classes=data_loader.num_classes,
+                               num_projections=args.num_projections,
+                               weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
+                               device=device, method=args.method)
+    list_fairness = list()
+
     # put networks in training mode
     model.train()
 
@@ -139,38 +160,35 @@ def main():
 
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
-            ws_score = wasserstein_evaluation(model=model, prior_distribution=distribution_fn, test_loader=test_loader,
-                                              device=device)
-
-            avg_posterior_gap = [0 for _ in range(data_loader.num_classes)]
-            avg_reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
-            avg_list_l1 = [0 for _ in range(data_loader.num_classes)]
-            for cls_id in range(data_loader.num_classes):
-                avg_posterior_gap[cls_id] = posterior_gap[cls_id] / num_instances[cls_id]
-                avg_reconstruction_loss[cls_id] = avg_reconstruction_loss[cls_id] / num_instances[cls_id]
-                avg_list_l1[cls_id] = avg_list_l1[cls_id] / num_instances[cls_id]
-
             print()
             print("############## EVALUATION ##############")
             print("Overall evaluation results:")
-            print(f"Overall loss: {test_evals['loss'].item()}")
-            print(f"Wasserstein distance between generated images and real images: {ws_score}")
-            print(f"Reconstruction loss: {test_evals['recon_loss'].item()}")
-            print(f"SWD loss: {test_evals['swd_loss'].item()}")
-            print(f"Fair_SWD loss: {test_evals['fsw_loss'].item()}")
-            print(f"L1 loss: {test_evals['l1_loss'].item()}")
+            print(f"Overall loss: {test_loss / len(test_loader)}")
+            # print(f"Wasserstein distance between generated images and real images: {ws_score}")
+            print(f"Reconstruction loss: {test_evals['recon_loss'].item() / len(test_loader)}")
+            print(f"SWD loss: {test_evals['swd_loss'].item() / len(test_loader)}")
+            print(f"L1 loss: {test_evals['l1_loss'].item() / len(test_loader)}")
 
             print()
             print("Evaluation of each class:")
-            print(f"Reconstruction loss: {avg_reconstruction_loss}")
-            print(f"L1 loss: {avg_list_l1}")
-            print(f"Posterior gap: {avg_posterior_gap}")
-
+            print(f"Fairness of Reconstruction loss: {calculate_fairness(reconstruction_loss)}, {reconstruction_loss}")
+            print()
+            print(f"Fairness of L1 loss: {calculate_fairness(list_l1)}, {list_l1}")
+            print()
+            print(f"Fairness of Posterior gap: {calculate_fairness(posterior_gap)}, {posterior_gap}")
             print("########################################")
             print()
 
-        # plot
-        test_encode, test_targets = torch.cat(test_encode).cpu().numpy(), torch.cat(test_targets).cpu().numpy()
+        test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+
+        pairwise_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
+                                                  list_labels=test_targets,
+                                                  prior_distribution=distribution_fn,
+                                                  num_classes=data_loader.num_classes,
+                                                  device=device,
+                                                  num_projections=args.num_projections)
+        print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
+        list_fairness.append(pairwise_swd_2)
 
         test_loss /= len(test_loader)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
@@ -179,7 +197,9 @@ def main():
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
         # save model
         torch.save(model.state_dict(), '{}/mnist_epoch_{}.pth'.format(chkptdir, epoch + 1))
-        # save encoded samples plot
+
+        # plot
+        test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
         plt.figure(figsize=(10, 10))
         plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
         plt.xlim([-1.5, 1.5])
@@ -187,6 +207,7 @@ def main():
         plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
         plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
         plt.close()
+
         # save sample input and reconstruction
         vutils.save_image(x, '{}/test_samples_epoch_{}.png'.format(imagesdir, epoch + 1))
         vutils.save_image(batch['decode'].detach(),
@@ -196,5 +217,21 @@ def main():
         gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
         vutils.save_image(gen_image,
                           '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
+
+
+    # Create x-axis values (indices of the list)
+    iterations = range(1, len(list_fairness) + 1)
+
+    # Create a new figure
+    plt.figure(figsize=(10, 10))  # Width, Height in inches
+
+    # Plot the sequence
+    plt.plot(iterations, list_fairness, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Fairness')
+    plt.title(f'Fairness convergence plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/aaa_fairness_convergence.png'.format(imagesdir))
+    plt.close()
 if __name__ == '__main__':
     main()

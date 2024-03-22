@@ -22,9 +22,9 @@ def main():
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
     parser.add_argument('--batch-size', type=int, default=80, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',
+    parser.add_argument('--epochs', type=int, default=500, metavar='N',
                         help='number of epochs to train (default: 10)')
-    parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                         help='learning rate (default: 0.001)')
     parser.add_argument('--alpha', type=float, default=0.9, metavar='A',
                         help='RMSprop alpha/rho (default: 0.9)')
@@ -49,7 +49,7 @@ def main():
     parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
                         help='method (default: FEFBSW)')
 
-    parser.add_argument('--optimizer', type=str, default='rmsprop',
+    parser.add_argument('--optimizer', type=str, default='adam',
                         help='Optimizer (default: rmsprop)')
     parser.add_argument('--embedding-size', type=int, default=64, metavar='ES',
                         help='model embedding size (default: 64)')
