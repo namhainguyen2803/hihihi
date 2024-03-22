@@ -2,13 +2,16 @@ import argparse
 import os
 
 import matplotlib as mpl
+from sklearn.manifold import TSNE
+
+from swae.models.cifar10 import CIFAR10Autoencoder
 
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 import torchvision.utils as vutils
-from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d
+from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
@@ -16,9 +19,11 @@ from dataloader.dataloader import *
 from swae.utils import *
 from evaluate import *
 
+
 def main():
     # train args
-    parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch MNIST Example')
+    parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
+    parser.add_argument('--dataset', default='mnist', help='dataset name')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
     parser.add_argument('--batch-size', type=int, default=500, metavar='N',
@@ -35,6 +40,8 @@ def main():
                         help='weight of fsw (default: 1)')
     parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
                         help='method (default: FEFBSW)')
+    parser.add_argument('--num-projections', type=int, default=500, metavar='NP',
+                        help='number of projections (default: 500)')
 
     parser.add_argument('--alpha', type=float, default=0.9, metavar='A',
                         help='RMSprop alpha/rho (default: 0.9)')
@@ -74,17 +81,37 @@ def main():
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
     # log args
-    print('batch size {}\nepochs {}\nRMSprop lr {} alpha {}\ndistribution {}\nusing device {}\nseed set to {}'.format(
-        args.batch_size, args.epochs, args.lr, args.alpha, args.distribution, device.type, args.seed
-    ))
+    if args.optimizer == 'rmsprop':
+        print(
+            'batch size {}\nepochs {}\nRMSprop lr {} alpha {}\ndistribution {}\nusing device {}\nseed set to {}'.format(
+                args.batch_size, args.epochs, args.lr, args.alpha, args.distribution, device.type, args.seed
+            ))
+    else:
+        print(
+            'batch size {}\nepochs {}\n{}: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}'.format(
+                args.batch_size, args.epochs, args.optimizer,
+                args.lr, args.beta1, args.beta2, args.distribution,
+                device.type, args.seed
+            ))
 
     # build train and test set data loaders
-    data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+    if args.dataset == 'mnist':
+        data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+    elif args.dataset == 'cifar10':
+        data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+    else:
+        data_loader = None
     train_loader, test_loader = data_loader.create_dataloader()
 
     # create encoder and decoder
-    model = MNISTAutoencoder().to(device)
+    if args.dataset == 'mnist':
+        model = MNISTAutoencoder().to(device)
+    elif args.dataset == 'cifar10':
+        model = CIFAR10Autoencoder(embedding_dim=args.embedding_size).to(device)
+    else:
+        model = None
     print(model)
+
     # create optimizer
     if args.optimizer == 'rmsprop':
         optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
@@ -98,12 +125,20 @@ def main():
         optimizer = optim.SGD(model.parameters(), lr=args.lr)
 
     # determine latent distribution
-    if args.distribution == 'circle':
-        distribution_fn = rand_cirlce2d
-    elif args.distribution == 'ring':
-        distribution_fn = rand_ring2d
+    if args.dataset == 'mnist':
+        if args.distribution == 'circle':
+            distribution_fn = rand_cirlce2d
+        elif args.distribution == 'ring':
+            distribution_fn = rand_ring2d
+        else:
+            distribution_fn = rand_uniform2d
     else:
-        distribution_fn = rand_uniform2d
+        if args.distribution == 'uniform':
+            distribution_fn = rand(args.embedding_size)
+        elif args.distribution == 'normal':
+            distribution_fn = randn(args.embedding_size)
+        else:
+            raise ('distribution {} not supported'.format(args.distribution))
 
     # create batch sliced_wasserstein autoencoder trainer
     trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer,
@@ -184,11 +219,11 @@ def main():
         test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
 
         pairwise_swd_2, avg_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
-                                                  list_labels=test_targets,
-                                                  prior_distribution=distribution_fn,
-                                                  num_classes=data_loader.num_classes,
-                                                  device=device,
-                                                  num_projections=args.num_projections)
+                                                             list_labels=test_targets,
+                                                             prior_distribution=distribution_fn,
+                                                             num_classes=data_loader.num_classes,
+                                                             device=device,
+                                                             num_projections=args.num_projections)
         print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
         print(f"Avg swd distances 2 among all classes: {avg_swd_2}")
         list_fairness.append(pairwise_swd_2)
@@ -200,29 +235,44 @@ def main():
             epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
             test_loss))
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
-        # save model
-        torch.save(model.state_dict(), '{}/mnist_epoch_{}.pth'.format(chkptdir, epoch + 1))
 
-        # plot
-        test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-        plt.figure(figsize=(10, 10))
-        plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-        plt.xlim([-1.5, 1.5])
-        plt.ylim([-1.5, 1.5])
-        plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-        plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-        plt.close()
+        if (epoch + 1) % args.log_epoch_interval == 0:
+            # save model
+            torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
+            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
+            if args.dataset == "mnist":
+                # plot
+                plt.figure(figsize=(10, 10))
+                plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
+                plt.xlim([-1.5, 1.5])
+                plt.ylim([-1.5, 1.5])
+                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.close()
+            else:
+                tsne = TSNE(n_components=2, random_state=42)
+                tsne_result = tsne.fit_transform(test_encode)
 
-        # save sample input and reconstruction
-        vutils.save_image(x, '{}/test_samples_epoch_{}.png'.format(imagesdir, epoch + 1))
-        vutils.save_image(batch['decode'].detach(),
-                          '{}/test_recon_epoch_{}.png'.format(imagesdir, epoch + 1),
-                          normalize=True)
+                plt.figure(figsize=(10, 10))
+                plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
+                plt.title('t-SNE Visualization')
+                plt.xlabel('t-SNE Component 1')
+                plt.ylabel('t-SNE Component 2')
+                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.colorbar(label='Target')
+                plt.close()
 
-        gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
-        vutils.save_image(gen_image,
-                          '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
+            # save sample input and reconstruction
+            vutils.save_image(x, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
+            vutils.save_image(batch['decode'].detach(),
+                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                              normalize=True)
+
+            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
+            vutils.save_image(gen_image,
+                              '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
     # Create x-axis values (indices of the list)
     iterations = range(1, len(list_fairness) + 1)
@@ -257,5 +307,7 @@ def main():
     plt.grid(True)
     plt.savefig('{}/aaa_loss_convergence.png'.format(imagesdir))
     plt.close()
+
+
 if __name__ == '__main__':
     main()
