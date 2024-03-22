@@ -113,6 +113,8 @@ def main():
                                weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
                                device=device, method=args.method)
     list_fairness = list()
+    list_loss = list()
+    list_avg_swd = list()
 
     # put networks in training mode
     model.train()
@@ -181,16 +183,19 @@ def main():
 
         test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
 
-        pairwise_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
+        pairwise_swd_2, avg_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
                                                   list_labels=test_targets,
                                                   prior_distribution=distribution_fn,
                                                   num_classes=data_loader.num_classes,
                                                   device=device,
                                                   num_projections=args.num_projections)
         print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
+        print(f"Avg swd distances 2 among all classes: {avg_swd_2}")
         list_fairness.append(pairwise_swd_2)
+        list_avg_swd.append(avg_swd_2)
 
         test_loss /= len(test_loader)
+        list_loss.append(test_loss)
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
             epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
             test_loss))
@@ -232,6 +237,25 @@ def main():
     plt.title(f'Fairness convergence plot of {args.method}')
     plt.grid(True)
     plt.savefig('{}/aaa_fairness_convergence.png'.format(imagesdir))
+    plt.close()
+
+    plt.figure(figsize=(10, 10))  # Width, Height in inches
+
+    # Plot the sequence
+    plt.plot(iterations, list_avg_swd, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Avg SWD')
+    plt.title(f'Avg SWD convergence plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/aaa_avg_SWD_convergence.png'.format(imagesdir))
+    plt.close()
+
+    plt.plot(iterations, list_loss, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(f'Loss convergence plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/aaa_loss_convergence.png'.format(imagesdir))
     plt.close()
 if __name__ == '__main__':
     main()

@@ -74,10 +74,12 @@ def calculate_pairwise_swd_2(list_features, list_labels, prior_distribution, num
 
             dist_swd[cls_id] = swd
 
+        s = 0
         dist_pairwise = list()
         for cls_id_i in range(num_classes):
+            s += dist_swd[cls_id_i]
             for cls_id_j in range(cls_id_i + 1, num_classes):
                 a = torch.abs(dist_swd[cls_id_i] - dist_swd[cls_id_j])
                 dist_pairwise.append(a)
 
-    return torch.sum(torch.tensor(dist_pairwise)) / len(dist_pairwise)
+    return torch.sum(torch.tensor(dist_pairwise)) / len(dist_pairwise), s / len(dist_pairwise)
