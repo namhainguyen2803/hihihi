@@ -62,8 +62,11 @@ def main():
                         help='number of dataloader workers if device is CPU (default: 8)')
     parser.add_argument('--seed', type=int, default=7, metavar='S',
                         help='random seed (default: 7)')
+    
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='number of batches to log training status (default: 10)')
+    parser.add_argument('--log-epoch-interval', type=int, default=2, metavar='N',
+                        help='number of epochs to save training artifacts (default: 1)')
     args = parser.parse_args()
     # create output directory
     imagesdir = os.path.join(args.outdir, 'images')
