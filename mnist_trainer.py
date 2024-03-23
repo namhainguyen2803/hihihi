@@ -62,7 +62,7 @@ def main():
                         help='number of dataloader workers if device is CPU (default: 8)')
     parser.add_argument('--seed', type=int, default=7, metavar='S',
                         help='random seed (default: 7)')
-    
+
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='number of batches to log training status (default: 10)')
     parser.add_argument('--log-epoch-interval', type=int, default=2, metavar='N',
@@ -230,7 +230,7 @@ def main():
         print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
         print(f"Avg swd distances 2 among all classes: {avg_swd_2}")
         list_fairness.append(pairwise_swd_2)
-        list_avg_swd.append(avg_swd_2)
+        list_avg_swd.append(avg_swd_2.item())
 
         test_loss /= len(test_loader)
         list_loss.append(test_loss)
