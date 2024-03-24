@@ -281,7 +281,7 @@ def main():
                 plt.xlim([-1.5, 1.5])
                 plt.ylim([-1.5, 1.5])
                 plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
-                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
                 plt.close()
 
             else:
