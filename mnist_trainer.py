@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 30)')
     parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
-                        help='learning rate (default: 0.001)')
+                        help='learning rate (default: 0.0001)')
 
     parser.add_argument('--weight_swd', type=float, default=1,
                         help='weight of swd (default: 1)')
@@ -154,6 +154,10 @@ def main():
     list_loss = list()
     list_avg_swd = list()
 
+    train_list_fairness = list()
+    train_list_loss = list()
+    train_list_avg_swd = list()
+
     # put networks in training mode
     model.train()
 
@@ -163,8 +167,15 @@ def main():
         # if epoch > 10:
         #     trainer.weight *= 1.1
         # train autoencoder on train dataset
+
+        train_encode, train_targets, train_loss = list(), list(), 0.0
         for batch_idx, (x, y) in enumerate(train_loader, start=0):
             batch = trainer.train_on_batch(x, y)
+
+            train_encode.append(batch['encode'].detach())
+            train_loss += batch['loss'].item()
+            train_targets.append(y)
+
             if (batch_idx + 1) % args.log_interval == 0:
                 print('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}'.format(
                     epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
@@ -220,17 +231,28 @@ def main():
             print()
 
         test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-
         pairwise_swd_2, avg_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
                                                              list_labels=test_targets,
                                                              prior_distribution=distribution_fn,
                                                              num_classes=data_loader.num_classes,
                                                              device=device,
                                                              num_projections=args.num_projections)
-        print(f"Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
-        print(f"Avg swd distances 2 among all classes: {avg_swd_2}")
+        print(f"In testing, Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
+        print(f"In testing, Avg swd distances 2 among all classes: {avg_swd_2}")
         list_fairness.append(pairwise_swd_2)
         list_avg_swd.append(avg_swd_2.item())
+
+        train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
+        train_pairwise_swd_2, train_avg_swd_2 = calculate_pairwise_swd_2(list_features=train_encode,
+                                                             list_labels=train_targets,
+                                                             prior_distribution=distribution_fn,
+                                                             num_classes=data_loader.num_classes,
+                                                             device=device,
+                                                             num_projections=args.num_projections)
+        print(f"In training, Pairwise swd distances 2 among all classes: {train_pairwise_swd_2}")
+        print(f"In training, Avg swd distances 2 among all classes: {train_avg_swd_2}")
+        train_list_fairness.append(train_pairwise_swd_2)
+        train_list_avg_swd.append(train_avg_swd_2.item())
 
         test_loss /= len(test_loader)
         list_loss.append(test_loss)
@@ -239,10 +261,11 @@ def main():
             test_loss))
         print('{{"metric": "loss", "value": {}}}'.format(test_loss))
 
-        if (epoch + 1) % args.log_epoch_interval == 0:
+        if (epoch + 1) == args.epochs:
             # save model
             torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
             test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
+            train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
             if args.dataset == "mnist":
                 # plot
                 plt.figure(figsize=(10, 10))
@@ -252,6 +275,15 @@ def main():
                 plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
                 plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
                 plt.close()
+
+                plt.figure(figsize=(10, 10))
+                plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
+                plt.xlim([-1.5, 1.5])
+                plt.ylim([-1.5, 1.5])
+                plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
+                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.close()
+
             else:
                 tsne = TSNE(n_components=2, random_state=42)
                 tsne_result = tsne.fit_transform(test_encode)
@@ -277,38 +309,63 @@ def main():
             vutils.save_image(gen_image,
                               '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
-    # Create x-axis values (indices of the list)
+
     iterations = range(1, len(list_fairness) + 1)
 
-    # Create a new figure
-    plt.figure(figsize=(10, 10))  # Width, Height in inches
-
-    # Plot the sequence
+    plt.figure(figsize=(10, 10))
     plt.plot(iterations, list_fairness, marker='o', linestyle='-')
     plt.xlabel('Epoch')
     plt.ylabel('Fairness')
-    plt.title(f'Fairness convergence plot of {args.method}')
+    plt.title(f'In tesing Fairness convergence plot of {args.method}')
     plt.grid(True)
-    plt.savefig('{}/aaa_fairness_convergence.png'.format(imagesdir))
+    plt.savefig('{}/test_fairness_convergence.png'.format(imagesdir))
     plt.close()
 
-    plt.figure(figsize=(10, 10))  # Width, Height in inches
-
-    # Plot the sequence
+    plt.figure(figsize=(10, 10))
     plt.plot(iterations, list_avg_swd, marker='o', linestyle='-')
     plt.xlabel('Epoch')
     plt.ylabel('Avg SWD')
-    plt.title(f'Avg SWD convergence plot of {args.method}')
+    plt.title(f'In tesing Avg SWD convergence plot of {args.method}')
     plt.grid(True)
-    plt.savefig('{}/aaa_avg_SWD_convergence.png'.format(imagesdir))
+    plt.savefig('{}/test_avg_SWD_convergence.png'.format(imagesdir))
     plt.close()
 
+    plt.figure(figsize=(10, 10))
     plt.plot(iterations, list_loss, marker='o', linestyle='-')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.title(f'Loss convergence plot of {args.method}')
+    plt.title(f'In testing Loss convergence plot of {args.method}')
     plt.grid(True)
-    plt.savefig('{}/aaa_loss_convergence.png'.format(imagesdir))
+    plt.savefig('{}/test_loss_convergence.png'.format(imagesdir))
+    plt.close()
+
+
+    iterations = range(1, len(train_list_fairness) + 1)
+    plt.figure(figsize=(10, 10))  # Width, Height in inches
+    plt.plot(iterations, train_list_fairness, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Fairness')
+    plt.title(f'In training Fairness convergence plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/training_fairness_convergence.png'.format(imagesdir))
+    plt.close()
+
+    plt.figure(figsize=(10, 10))
+    plt.plot(iterations, train_list_avg_swd, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Avg SWD')
+    plt.title(f'In training Avg SWD convergence plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/training_avg_SWD_convergence.png'.format(imagesdir))
+    plt.close()
+
+    plt.figure(figsize=(10, 10))
+    plt.plot(iterations, train_list_loss, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(f'In training Loss convergence plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/training_loss_convergence.png'.format(imagesdir))
     plt.close()
 
 
