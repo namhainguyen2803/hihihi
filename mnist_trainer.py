@@ -312,7 +312,7 @@ def main():
             vutils.save_image(test_evals['decode'].detach(),
                               '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
                               normalize=True)
-            
+
             vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
             vutils.save_image(batch['decode'].detach(),
