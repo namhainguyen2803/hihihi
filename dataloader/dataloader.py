@@ -45,7 +45,7 @@ class MNISTLTDataLoader:
             class_idxs=all_classes_indices,
             batch_size=self.train_batch_size,
             n_batches=len(self.train_dataset.targets) // self.train_batch_size,
-            alpha=1,
+            alpha=0,
             kind='fixed'
         )
 
@@ -61,7 +61,7 @@ class MNISTLTDataLoader:
             class_idxs=all_classes_indices,
             batch_size=self.test_batch_size,
             n_batches=len(self.test_dataset.targets) // self.test_batch_size,
-            alpha=1,
+            alpha=0,
             kind='fixed'
         )
 

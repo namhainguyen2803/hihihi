@@ -263,6 +263,7 @@ def main():
         train_loss /= len(train_loader)
         list_loss.append(test_loss)
         train_list_loss.append(train_loss)
+
         print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
             epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
             test_loss))
