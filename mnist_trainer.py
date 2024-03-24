@@ -319,7 +319,7 @@ def main():
                               '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
                               normalize=True)
 
-            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
+            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100, device=device)
             vutils.save_image(gen_image,
                               '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
