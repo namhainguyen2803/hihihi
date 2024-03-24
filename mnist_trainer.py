@@ -307,10 +307,16 @@ def main():
                 plt.close()
 
             # save sample input and reconstruction
-            vutils.save_image(x, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+            vutils.save_image(x_test, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+
+            vutils.save_image(test_evals['decode'].detach(),
+                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                              normalize=True)
+            
+            vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
             vutils.save_image(batch['decode'].detach(),
-                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                              '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
                               normalize=True)
 
             gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=30, device=device)
