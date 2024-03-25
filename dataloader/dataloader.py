@@ -19,7 +19,7 @@ class MNISTLTDataLoader:
     def create_dataset(self):
         train_set = IMBALANCEMNIST(self.data_dir + "train/",
                                    train=True, download=True,
-                                   imb_type='exp', imb_factor=0.01,
+                                   imb_type='exp', imb_factor=0.05,
                                    transform=transforms.Compose([
                                        transforms.ToTensor()
                                    ]))
