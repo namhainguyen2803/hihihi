@@ -161,6 +161,25 @@ def main():
     # put networks in training mode
     model.train()
 
+    with torch.no_grad():
+        pre_test_encode, pre_test_targets = list(), list()
+        for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
+
+            test_evals = trainer.test_on_batch(x_test, y_test)
+            pre_test_encode.append(test_evals['encode'].detach())
+            pre_test_targets.append(y_test)
+
+        pre_test_encode, pre_test_targets = torch.cat(pre_test_encode), torch.cat(pre_test_targets)
+        pre_pairwise_swd, pre_avg_swd = calculate_pairwise_swd_2(list_features=pre_test_encode,
+                                                             list_labels=pre_test_targets,
+                                                             prior_distribution=distribution_fn,
+                                                             num_classes=data_loader.num_classes,
+                                                             device=device,
+                                                             num_projections=args.num_projections)
+        print(f"In pre training, Pairwise swd distances 2 among all classes: {pre_pairwise_swd}")
+        print(f"In pre training, Avg swd distances 2 among all classes: {pre_avg_swd}")
+
+    print()
     # train networks for n epochs
     print('training...')
     for epoch in range(args.epochs):
