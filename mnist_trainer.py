@@ -158,9 +158,6 @@ def main():
     train_list_loss = list()
     train_list_avg_swd = list()
 
-    # put networks in training mode
-    model.train()
-
     with torch.no_grad():
         pre_test_encode, pre_test_targets = list(), list()
         for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
@@ -183,6 +180,7 @@ def main():
     # train networks for n epochs
     print('training...')
     for epoch in range(args.epochs):
+        model.train()
         # if epoch > 10:
         #     trainer.weight *= 1.1
         # train autoencoder on train dataset
@@ -196,6 +194,7 @@ def main():
                     (batch_idx + 1), len(train_loader),
                     batch['loss'].item()))
 
+        model.eval()
         # evaluate autoencoder on test dataset
         # keep track swd gap of each gap, reconstruction loss of each gap
         test_encode, test_targets, test_loss = list(), list(), 0.0
@@ -235,6 +234,9 @@ def main():
 
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
+            wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
+                                   test_loader=train_loader, device=device)
+
             print()
             print("############## EVALUATION ##############")
             print("Overall evaluation results:")
@@ -243,6 +245,7 @@ def main():
             print(f"Reconstruction loss: {test_evals['recon_loss'].item() / len(test_loader)}")
             print(f"SWD loss: {test_evals['swd_loss'].item() / len(test_loader)}")
             print(f"L1 loss: {test_evals['l1_loss'].item() / len(test_loader)}")
+            print(f"SWD loss of generative images: {wd_gen}")
 
             print()
             print("Evaluation of each class:")
@@ -254,93 +257,92 @@ def main():
             print("########################################")
             print()
 
-        test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-        pairwise_swd_2, avg_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
-                                                             list_labels=test_targets,
-                                                             prior_distribution=distribution_fn,
-                                                             num_classes=data_loader.num_classes,
-                                                             device=device,
-                                                             num_projections=args.num_projections)
-        print(f"In testing, Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
-        print(f"In testing, Avg swd distances 2 among all classes: {avg_swd_2}")
-        list_fairness.append(pairwise_swd_2)
-        list_avg_swd.append(avg_swd_2.item())
+            test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+            pairwise_swd_2, avg_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
+                                                                 list_labels=test_targets,
+                                                                 prior_distribution=distribution_fn,
+                                                                 num_classes=data_loader.num_classes,
+                                                                 device=device,
+                                                                 num_projections=args.num_projections)
+            print(f"In testing, Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
+            print(f"In testing, Avg swd distances 2 among all classes: {avg_swd_2}")
+            list_fairness.append(pairwise_swd_2)
+            list_avg_swd.append(avg_swd_2.item())
 
-        train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
-        train_pairwise_swd_2, train_avg_swd_2 = calculate_pairwise_swd_2(list_features=train_encode,
-                                                             list_labels=train_targets,
-                                                             prior_distribution=distribution_fn,
-                                                             num_classes=data_loader.num_classes,
-                                                             device=device,
-                                                             num_projections=args.num_projections)
-        print(f"In training, Pairwise swd distances 2 among all classes: {train_pairwise_swd_2}")
-        print(f"In training, Avg swd distances 2 among all classes: {train_avg_swd_2}")
-        train_list_fairness.append(train_pairwise_swd_2)
-        train_list_avg_swd.append(train_avg_swd_2.item())
+            train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
+            train_pairwise_swd_2, train_avg_swd_2 = calculate_pairwise_swd_2(list_features=train_encode,
+                                                                 list_labels=train_targets,
+                                                                 prior_distribution=distribution_fn,
+                                                                 num_classes=data_loader.num_classes,
+                                                                 device=device,
+                                                                 num_projections=args.num_projections)
+            print(f"In training, Pairwise swd distances 2 among all classes: {train_pairwise_swd_2}")
+            print(f"In training, Avg swd distances 2 among all classes: {train_avg_swd_2}")
+            train_list_fairness.append(train_pairwise_swd_2)
+            train_list_avg_swd.append(train_avg_swd_2.item())
 
-        test_loss /= len(test_loader)
-        train_loss /= len(train_loader)
-        list_loss.append(test_loss)
-        train_list_loss.append(train_loss)
+            test_loss /= len(test_loader)
+            train_loss /= len(train_loader)
+            list_loss.append(test_loss)
+            train_list_loss.append(train_loss)
 
-        print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(
-            epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
-            test_loss))
-        print('{{"metric": "loss", "value": {}}}'.format(test_loss))
+            print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
+                test_loss))
+            print('{{"metric": "loss", "value": {}}}'.format(test_loss))
 
-        if (epoch + 1) == args.epochs:
-            # save model
-            torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
-            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-            train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
-            if args.dataset == "mnist":
-                # plot
-                plt.figure(figsize=(10, 10))
-                plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-                plt.xlim([-1.5, 1.5])
-                plt.ylim([-1.5, 1.5])
-                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                plt.close()
+            if (epoch + 1) == args.epochs:
+                # save model
+                torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
+                test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
+                train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
+                if args.dataset == "mnist":
+                    # plot
+                    plt.figure(figsize=(10, 10))
+                    plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
+                    plt.xlim([-1.5, 1.5])
+                    plt.ylim([-1.5, 1.5])
+                    plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                    plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                    plt.close()
 
-                plt.figure(figsize=(10, 10))
-                plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
-                plt.xlim([-1.5, 1.5])
-                plt.ylim([-1.5, 1.5])
-                plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
-                plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                plt.close()
+                    plt.figure(figsize=(10, 10))
+                    plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
+                    plt.xlim([-1.5, 1.5])
+                    plt.ylim([-1.5, 1.5])
+                    plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
+                    plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                    plt.close()
 
-            else:
-                tsne = TSNE(n_components=2, random_state=42)
-                tsne_result = tsne.fit_transform(test_encode)
+                else:
+                    tsne = TSNE(n_components=2, random_state=42)
+                    tsne_result = tsne.fit_transform(test_encode)
 
-                plt.figure(figsize=(10, 10))
-                plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
-                plt.title('t-SNE Visualization')
-                plt.xlabel('t-SNE Component 1')
-                plt.ylabel('t-SNE Component 2')
-                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                plt.colorbar(label='Target')
-                plt.close()
+                    plt.figure(figsize=(10, 10))
+                    plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
+                    plt.title('t-SNE Visualization')
+                    plt.xlabel('t-SNE Component 1')
+                    plt.ylabel('t-SNE Component 2')
+                    plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                    plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                    plt.colorbar(label='Target')
+                    plt.close()
 
-            # save sample input and reconstruction
-            vutils.save_image(x_test, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+                # save sample input and reconstruction
+                vutils.save_image(x_test, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
-            vutils.save_image(test_evals['decode'].detach(),
-                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
-                              normalize=True)
+                vutils.save_image(test_evals['decode'].detach(),
+                                  '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                                  normalize=True)
 
-            vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+                vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
-            vutils.save_image(batch['decode'].detach(),
-                              '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
-                              normalize=True)
+                vutils.save_image(batch['decode'].detach(),
+                                  '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                                  normalize=True)
 
-            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100, device=device)
-            vutils.save_image(gen_image,
-                              '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
+                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100, device=device)
+                vutils.save_image(gen_image,
+                                  '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
 
     iterations = range(1, len(list_fairness) + 1)
