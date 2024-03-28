@@ -153,6 +153,7 @@ def main():
     list_fairness = list()
     list_loss = list()
     list_avg_swd = list()
+    list_gen_ws = list()
 
     train_list_fairness = list()
     train_list_loss = list()
@@ -175,6 +176,9 @@ def main():
                                                              num_projections=args.num_projections)
         print(f"In pre training, Pairwise swd distances 2 among all classes: {pre_pairwise_swd}")
         print(f"In pre training, Avg swd distances 2 among all classes: {pre_avg_swd}")
+
+        list_fairness.append(pre_pairwise_swd)
+        list_avg_swd.append(pre_avg_swd)
 
     print()
     # train networks for n epochs
@@ -235,7 +239,8 @@ def main():
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
             wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
-                                   test_loader=train_loader, device=device)
+                                   test_loader=train_loader, device=device).item()
+            list_gen_ws.append(wd_gen)
 
             print()
             print("############## EVALUATION ##############")
@@ -346,7 +351,6 @@ def main():
 
 
     iterations = range(1, len(list_fairness) + 1)
-
     plt.figure(figsize=(10, 10))
     plt.plot(iterations, list_fairness, marker='o', linestyle='-')
     plt.xlabel('Epoch')
@@ -356,6 +360,7 @@ def main():
     plt.savefig('{}/test_fairness_convergence.png'.format(imagesdir))
     plt.close()
 
+    iterations = range(1, len(list_avg_swd) + 1)
     plt.figure(figsize=(10, 10))
     plt.plot(iterations, list_avg_swd, marker='o', linestyle='-')
     plt.xlabel('Epoch')
@@ -365,6 +370,7 @@ def main():
     plt.savefig('{}/test_avg_SWD_convergence.png'.format(imagesdir))
     plt.close()
 
+    iterations = range(1, len(list_loss) + 1)
     plt.figure(figsize=(10, 10))
     plt.plot(iterations, list_loss, marker='o', linestyle='-')
     plt.xlabel('Epoch')
@@ -373,7 +379,6 @@ def main():
     plt.grid(True)
     plt.savefig('{}/test_loss_convergence.png'.format(imagesdir))
     plt.close()
-
 
     iterations = range(1, len(train_list_fairness) + 1)
     plt.figure(figsize=(10, 10))  # Width, Height in inches
@@ -385,6 +390,7 @@ def main():
     plt.savefig('{}/training_fairness_convergence.png'.format(imagesdir))
     plt.close()
 
+    iterations = range(1, len(train_list_avg_swd) + 1)
     plt.figure(figsize=(10, 10))
     plt.plot(iterations, train_list_avg_swd, marker='o', linestyle='-')
     plt.xlabel('Epoch')
@@ -394,6 +400,7 @@ def main():
     plt.savefig('{}/training_avg_SWD_convergence.png'.format(imagesdir))
     plt.close()
 
+    iterations = range(1, len(train_list_loss) + 1)
     plt.figure(figsize=(10, 10))
     plt.plot(iterations, train_list_loss, marker='o', linestyle='-')
     plt.xlabel('Epoch')
