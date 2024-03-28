@@ -239,7 +239,7 @@ def main():
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
             wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
-                                   test_loader=train_loader, device=device).item()
+                                   test_loader=train_loader, device=device)
             list_gen_ws.append(wd_gen)
 
             print()
