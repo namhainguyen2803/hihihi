@@ -410,6 +410,16 @@ def main():
     plt.savefig('{}/training_loss_convergence.png'.format(imagesdir))
     plt.close()
 
+    iterations = range(1, len(list_gen_ws) + 1)
+    plt.figure(figsize=(10, 10))
+    plt.plot(iterations, list_gen_ws, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(f'In testing wasserstein gap between generated images and ground truth plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/ws_gap_gen_train.png'.format(imagesdir))
+    plt.close()
+
 
 if __name__ == '__main__':
     main()
