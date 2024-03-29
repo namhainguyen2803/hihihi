@@ -162,23 +162,22 @@ def main():
     with torch.no_grad():
         pre_test_encode, pre_test_targets = list(), list()
         for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-
             test_evals = trainer.test_on_batch(x_test, y_test)
             pre_test_encode.append(test_evals['encode'].detach())
             pre_test_targets.append(y_test)
 
         pre_test_encode, pre_test_targets = torch.cat(pre_test_encode), torch.cat(pre_test_targets)
         pre_pairwise_swd, pre_avg_swd = calculate_pairwise_swd_2(list_features=pre_test_encode,
-                                                             list_labels=pre_test_targets,
-                                                             prior_distribution=distribution_fn,
-                                                             num_classes=data_loader.num_classes,
-                                                             device=device,
-                                                             num_projections=args.num_projections)
+                                                                 list_labels=pre_test_targets,
+                                                                 prior_distribution=distribution_fn,
+                                                                 num_classes=data_loader.num_classes,
+                                                                 device=device,
+                                                                 num_projections=args.num_projections)
         print(f"In pre training, Pairwise swd distances 2 among all classes: {pre_pairwise_swd}")
-        print(f"In pre training, Avg swd distances 2 among all classes: {pre_avg_swd}")
+        print(f"In pre training, Avg swd distances 2 among all classes: {pre_avg_swd.item()}")
 
         list_fairness.append(pre_pairwise_swd)
-        list_avg_swd.append(pre_avg_swd)
+        list_avg_swd.append(pre_avg_swd.item())
 
     print()
     # train networks for n epochs
@@ -239,7 +238,7 @@ def main():
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
             wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
-                                   test_loader=train_loader, device=device)
+                                            test_loader=train_loader, device=device)
             list_gen_ws.append(wd_gen)
 
             print()
@@ -276,11 +275,11 @@ def main():
 
             train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
             train_pairwise_swd_2, train_avg_swd_2 = calculate_pairwise_swd_2(list_features=train_encode,
-                                                                 list_labels=train_targets,
-                                                                 prior_distribution=distribution_fn,
-                                                                 num_classes=data_loader.num_classes,
-                                                                 device=device,
-                                                                 num_projections=args.num_projections)
+                                                                             list_labels=train_targets,
+                                                                             prior_distribution=distribution_fn,
+                                                                             num_classes=data_loader.num_classes,
+                                                                             device=device,
+                                                                             num_projections=args.num_projections)
             print(f"In training, Pairwise swd distances 2 among all classes: {train_pairwise_swd_2}")
             print(f"In training, Avg swd distances 2 among all classes: {train_avg_swd_2}")
             train_list_fairness.append(train_pairwise_swd_2)
@@ -292,7 +291,7 @@ def main():
             train_list_loss.append(train_loss)
 
             print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
-                test_loss))
+                                                                  test_loss))
             print('{{"metric": "loss", "value": {}}}'.format(test_loss))
 
             if (epoch + 1) == args.epochs:
@@ -333,7 +332,8 @@ def main():
                     plt.close()
 
                 # save sample input and reconstruction
-                vutils.save_image(x_test, '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+                vutils.save_image(x_test,
+                                  '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
                 vutils.save_image(test_evals['decode'].detach(),
                                   '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
@@ -345,10 +345,10 @@ def main():
                                   '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
                                   normalize=True)
 
-                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100, device=device)
+                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
+                                           device=device)
                 vutils.save_image(gen_image,
                                   '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
-
 
     iterations = range(1, len(list_fairness) + 1)
     plt.figure(figsize=(10, 10))
