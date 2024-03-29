@@ -254,7 +254,9 @@ def main():
             print(f"Reconstruction loss: {test_evals['recon_loss'].item() / len(test_loader)}")
             print(f"SWD loss: {test_evals['swd_loss'].item() / len(test_loader)}")
             print(f"L1 loss: {test_evals['l1_loss'].item() / len(test_loader)}")
-            print(f"SWD loss of generative images: {wd_gen}")
+
+            print(f"SWD distance between generated images and training set: {train_wd_gen}")
+            print(f"SWD distance between generated images and testing set: {wd_gen}")
 
             print()
             print("Evaluation of each class:")
