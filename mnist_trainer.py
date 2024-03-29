@@ -29,7 +29,7 @@ def main():
     parser.add_argument('--batch-size', type=int, default=500, metavar='N',
                         help='input batch size for training (default: 500)')
 
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',
+    parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 30)')
     parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                         help='learning rate (default: 0.0001)')
@@ -158,6 +158,7 @@ def main():
     train_list_fairness = list()
     train_list_loss = list()
     train_list_avg_swd = list()
+    train_list_gen_ws = list()
 
     with torch.no_grad():
         pre_test_encode, pre_test_targets = list(), list()
@@ -237,8 +238,12 @@ def main():
 
                     num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
 
+            train_wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
+                                                  test_loader=train_loader, device=device)
+            train_list_gen_ws.append(train_wd_gen)
+
             wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
-                                            test_loader=train_loader, device=device)
+                                            test_loader=test_loader, device=device)
             list_gen_ws.append(wd_gen)
 
             print()
@@ -416,6 +421,16 @@ def main():
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title(f'In testing wasserstein gap between generated images and ground truth plot of {args.method}')
+    plt.grid(True)
+    plt.savefig('{}/ws_gap_gen_test.png'.format(imagesdir))
+    plt.close()
+
+    iterations = range(1, len(train_list_gen_ws) + 1)
+    plt.figure(figsize=(10, 10))
+    plt.plot(iterations, train_list_gen_ws, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(f'In training wasserstein gap between generated images and ground truth plot of {args.method}')
     plt.grid(True)
     plt.savefig('{}/ws_gap_gen_train.png'.format(imagesdir))
     plt.close()
