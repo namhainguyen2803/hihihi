@@ -40,7 +40,7 @@ def main():
                         help='weight of fsw (default: 1)')
     parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
                         help='method (default: FEFBSW)')
-    parser.add_argument('--num-projections', type=int, default=100000, metavar='NP',
+    parser.add_argument('--num-projections', type=int, default=10000, metavar='NP',
                         help='number of projections (default: 500)')
 
     parser.add_argument('--alpha', type=float, default=0.9, metavar='A',
