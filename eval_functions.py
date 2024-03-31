@@ -1,6 +1,6 @@
 import torch
 from swae.utils import *
-
+import matplotlib.pyplot as plt
 
 def generate_image(model,
                    prior_distribution,
@@ -196,4 +196,30 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
         print(f"Fairness in images space (FI): {F_images}")
         print(f"Averaging distance in images space (ADI): {AD_images}")
 
+        RL = convert_to_cpu_number(RL)
+        LP = convert_to_cpu_number(LP)
+        WG = convert_to_cpu_number(WG)
+        F = convert_to_cpu_number(F)
+        AD = convert_to_cpu_number(AD)
+        F_images = convert_to_cpu_number(F_images)
+        AD_images = convert_to_cpu_number(AD_images)
+
         return RL, LP, WG, F, AD, F_images, AD_images
+
+def convert_to_cpu_number(x):
+    if torch.is_tensor(x):
+        if x.is_cuda:
+            x = x.cpu()
+        return x.item()
+    else:
+        return x
+
+def plot_convergence(iterations, data, ylabel, title, imagesdir, filename):
+    plt.figure(figsize=(10, 10))
+    plt.plot(iterations, data, marker='o', linestyle='-')
+    plt.xlabel('Epoch')
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.grid(True)
+    plt.savefig(f'{imagesdir}/{filename}')
+    plt.close()

@@ -19,7 +19,6 @@ from dataloader.dataloader import *
 from swae.utils import *
 from eval_functions import *
 
-
 def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
@@ -150,40 +149,52 @@ def main():
                                num_projections=args.num_projections,
                                weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
                                device=device, method=args.method)
-    list_fairness = list()
-    list_loss = list()
-    list_avg_swd = list()
-    list_gen_ws = list()
 
-    train_list_fairness = list()
+    list_RL = list()
+    list_LP = list()
+    list_WG = list()
+    list_F = list()
+    list_AD = list()
+    list_F_images = list()
+    list_AD_images = list()
+
+    list_loss = list()
     train_list_loss = list()
-    train_list_avg_swd = list()
-    train_list_gen_ws = list()
 
     with torch.no_grad():
-        pre_test_encode, pre_test_targets = list(), list()
-        for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-            test_evals = trainer.test_on_batch(x_test, y_test)
-            pre_test_encode.append(test_evals['encode'].detach())
-            pre_test_targets.append(y_test)
+        model.eval()
 
-        pre_test_encode, pre_test_targets = torch.cat(pre_test_encode), torch.cat(pre_test_targets)
-        pre_pairwise_swd, pre_avg_swd = compute_fairness_and_averaging_distance(list_features=pre_test_encode,
-                                                                                list_labels=pre_test_targets,
-                                                                                prior_distribution=distribution_fn,
-                                                                                num_classes=data_loader.num_classes,
-                                                                                device=device,
-                                                                                num_projections=args.num_projections)
-        print(f"In pre training, Fairness score in test set: {pre_pairwise_swd}")
-        print(f"In pre training, Averaging distance score in test set: {pre_avg_swd.item()}")
+        RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                     model=model,
+                                                                     evaluator=trainer,
+                                                                     test_loader=test_loader,
+                                                                     prior_distribution=distribution_fn,
+                                                                     theta=None,
+                                                                     theta_latent=None,
+                                                                     device=device)
+        print("In pre-training, when evaluating test loader:")
+        print(f"Reconstruction loss (RL): {RL}")
+        print(f"Wasserstein distance between generated and real images (WG): {WG}")
+        print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
+        print(f"Fairness (F): {F}")
+        print(f"Averaging distance (AD): {AD}")
+        print(f"Fairness in images space (FI): {F_images}")
+        print(f"Averaging distance in images space (ADI): {AD_images}")
+        print()
 
-        list_fairness.append(pre_pairwise_swd)
-        list_avg_swd.append(pre_avg_swd.item())
+        list_RL.append(RL)
+        list_WG.append(WG)
+        list_LP.append(LP)
+        list_F.append(F)
+        list_AD.append(AD)
+        list_AD_images.append(AD_images)
+        list_F_images.append(F_images)
+
 
     print()
     # train networks for n epochs
-    print('training...')
     for epoch in range(args.epochs):
+        print('training...')
         model.train()
         # if epoch > 10:
         #     trainer.weight *= 1.1
@@ -198,11 +209,12 @@ def main():
                     (batch_idx + 1), len(train_loader),
                     batch['loss'].item()))
 
+        print('evaluating...')
         model.eval()
-        test_encode, test_targets, test_loss = list(), list(), 0.0
-        train_encode, train_targets, train_loss = list(), list(), 0.0
-
         with torch.no_grad():
+
+            train_encode, train_targets, train_loss = list(), list(), 0.0
+            test_encode, test_targets, test_loss = list(), list(), 0.0
 
             for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
                 batch = trainer.test_on_batch(x, y)
@@ -218,54 +230,6 @@ def main():
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
 
-            train_wd_gen = wasserstein_distance_of_generated_images_and_ground_truth_images(model=model,
-                                                                                            prior_distribution=distribution_fn,
-                                                                                            test_loader=train_loader,
-                                                                                            device=device)
-            train_list_gen_ws.append(train_wd_gen)
-
-            wd_gen = wasserstein_distance_of_generated_images_and_ground_truth_images(model=model,
-                                                                                      prior_distribution=distribution_fn,
-                                                                                      test_loader=test_loader,
-                                                                                      device=device)
-            list_gen_ws.append(wd_gen)
-
-            print()
-            print("############## EVALUATION ##############")
-            print("Overall evaluation results:")
-            print(f"Overall loss: {test_loss / len(test_loader)}")
-            # print(f"Wasserstein distance between generated images and real images: {ws_score}")
-            print(f"Reconstruction loss: {test_evals['recon_loss'].item() / len(test_loader)}")
-            print(f"SWD loss: {test_evals['swd_loss'].item() / len(test_loader)}")
-            print(f"L1 loss: {test_evals['l1_loss'].item() / len(test_loader)}")
-
-            print(f"SWD distance between generated images and training set: {train_wd_gen}")
-            print(f"SWD distance between generated images and testing set: {wd_gen}")
-
-            test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-            pairwise_swd_2, avg_swd_2 = compute_fairness_and_averaging_distance(list_features=test_encode,
-                                                                                list_labels=test_targets,
-                                                                                prior_distribution=distribution_fn,
-                                                                                num_classes=data_loader.num_classes,
-                                                                                device=device,
-                                                                                num_projections=args.num_projections)
-            print(f"In testing, Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
-            print(f"In testing, Avg swd distances 2 among all classes: {avg_swd_2}")
-            list_fairness.append(pairwise_swd_2)
-            list_avg_swd.append(avg_swd_2.item())
-
-            train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
-            train_pairwise_swd_2, train_avg_swd_2 = compute_fairness_and_averaging_distance(list_features=train_encode,
-                                                                                            list_labels=train_targets,
-                                                                                            prior_distribution=distribution_fn,
-                                                                                            num_classes=data_loader.num_classes,
-                                                                                            device=device,
-                                                                                            num_projections=args.num_projections)
-            print(f"In training, Pairwise swd distances 2 among all classes: {train_pairwise_swd_2}")
-            print(f"In training, Avg swd distances 2 among all classes: {train_avg_swd_2}")
-            train_list_fairness.append(train_pairwise_swd_2)
-            train_list_avg_swd.append(train_avg_swd_2.item())
-
             test_loss /= len(test_loader)
             train_loss /= len(train_loader)
             list_loss.append(test_loss)
@@ -274,6 +238,50 @@ def main():
             print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
                                                                   test_loss))
             print('{{"metric": "loss", "value": {}}}'.format(test_loss))
+
+            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                         model=model,
+                                                                         evaluator=trainer,
+                                                                         test_loader=train_loader,
+                                                                         prior_distribution=distribution_fn,
+                                                                         theta=None,
+                                                                         theta_latent=None,
+                                                                         device=device)
+            print("In pre-training, when evaluating train loader:")
+            print(f"Reconstruction loss (RL): {RL}")
+            print(f"Wasserstein distance between generated and real images (WG): {WG}")
+            print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
+            print(f"Fairness (F): {F}")
+            print(f"Averaging distance (AD): {AD}")
+            print(f"Fairness in images space (FI): {F_images}")
+            print(f"Averaging distance in images space (ADI): {AD_images}")
+            print()
+
+            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                         model=model,
+                                                                         evaluator=trainer,
+                                                                         test_loader=test_loader,
+                                                                         prior_distribution=distribution_fn,
+                                                                         theta=None,
+                                                                         theta_latent=None,
+                                                                         device=device)
+            print("In pre-training, when evaluating test loader:")
+            print(f"Reconstruction loss (RL): {RL}")
+            print(f"Wasserstein distance between generated and real images (WG): {WG}")
+            print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
+            print(f"Fairness (F): {F}")
+            print(f"Averaging distance (AD): {AD}")
+            print(f"Fairness in images space (FI): {F_images}")
+            print(f"Averaging distance in images space (ADI): {AD_images}")
+            print()
+
+            list_RL.append(RL)
+            list_WG.append(WG)
+            list_LP.append(LP)
+            list_F.append(F)
+            list_AD.append(AD)
+            list_AD_images.append(AD_images)
+            list_F_images.append(F_images)
 
             if (epoch + 1) == args.epochs:
                 # save model
@@ -331,85 +339,42 @@ def main():
                 vutils.save_image(gen_image,
                                   '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
 
-    iterations = range(1, len(list_fairness) + 1)
-    plt.figure(figsize=(10, 10))
-    plt.plot(iterations, list_fairness, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Fairness')
-    plt.title(f'In tesing Fairness convergence plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/test_fairness_convergence.png'.format(imagesdir))
-    plt.close()
 
-    iterations = range(1, len(list_avg_swd) + 1)
-    plt.figure(figsize=(10, 10))
-    plt.plot(iterations, list_avg_swd, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Avg SWD')
-    plt.title(f'In tesing Avg SWD convergence plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/test_avg_SWD_convergence.png'.format(imagesdir))
-    plt.close()
+    plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
+                     f'In testing loss convergence plot of {args.method}', imagesdir,
+                     'test_loss_convergence.png')
 
-    iterations = range(1, len(list_loss) + 1)
-    plt.figure(figsize=(10, 10))
-    plt.plot(iterations, list_loss, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title(f'In testing Loss convergence plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/test_loss_convergence.png'.format(imagesdir))
-    plt.close()
+    plot_convergence(range(1, len(train_list_loss) + 1), train_list_loss, 'Training loss',
+                     f'In training loss convergence plot of {args.method}', imagesdir,
+                     'train_loss_convergence.png')
 
-    iterations = range(1, len(train_list_fairness) + 1)
-    plt.figure(figsize=(10, 10))  # Width, Height in inches
-    plt.plot(iterations, train_list_fairness, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Fairness')
-    plt.title(f'In training Fairness convergence plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/training_fairness_convergence.png'.format(imagesdir))
-    plt.close()
+    plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
+                     f'Reconstruction Loss (RL) convergence plot of {args.method}', imagesdir,
+                     'rl_convergence.png')
 
-    iterations = range(1, len(train_list_avg_swd) + 1)
-    plt.figure(figsize=(10, 10))
-    plt.plot(iterations, train_list_avg_swd, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Avg SWD')
-    plt.title(f'In training Avg SWD convergence plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/training_avg_SWD_convergence.png'.format(imagesdir))
-    plt.close()
+    plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
+                     f'Wasserstein Distance (WG) convergence plot of {args.method}', imagesdir,
+                     'wg_convergence.png')
 
-    iterations = range(1, len(train_list_loss) + 1)
-    plt.figure(figsize=(10, 10))
-    plt.plot(iterations, train_list_loss, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title(f'In training Loss convergence plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/training_loss_convergence.png'.format(imagesdir))
-    plt.close()
+    plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
+                     f'Wasserstein Distance (LP) convergence plot of {args.method}', imagesdir,
+                     'lp_convergence.png')
 
-    iterations = range(1, len(list_gen_ws) + 1)
-    plt.figure(figsize=(10, 10))
-    plt.plot(iterations, list_gen_ws, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title(f'In testing wasserstein gap between generated images and ground truth plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/ws_gap_gen_test.png'.format(imagesdir))
-    plt.close()
+    plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
+                     f'Fairness (F) convergence plot of {args.method}', imagesdir,
+                     'f_convergence.png')
 
-    iterations = range(1, len(train_list_gen_ws) + 1)
-    plt.figure(figsize=(10, 10))
-    plt.plot(iterations, train_list_gen_ws, marker='o', linestyle='-')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title(f'In training wasserstein gap between generated images and ground truth plot of {args.method}')
-    plt.grid(True)
-    plt.savefig('{}/ws_gap_gen_train.png'.format(imagesdir))
-    plt.close()
+    plot_convergence(range(1, len(list_AD) + 1), list_AD, 'Averaging Distance (AD)',
+                     f'Averaging Distance (AD) convergence plot of {args.method}', imagesdir,
+                     'ad_convergence.png')
+
+    plot_convergence(range(1, len(list_AD_images) + 1), list_AD_images, 'Averaging Distance in Images Space (ADI)',
+                     f'Averaging Distance in Images Space (ADI) convergence plot of {args.method}', imagesdir,
+                     'ad_images_convergence.png')
+
+    plot_convergence(range(1, len(list_F_images) + 1), list_F_images, 'Fairness in Images Space (FI)',
+                     f'Fairness in Images Space (FI) convergence plot of {args.method}', imagesdir,
+                     'f_images_convergence.png')
 
 
 if __name__ == '__main__':

@@ -44,55 +44,11 @@ class SWAEBatchTrainer:
         return evals
 
     def test_on_batch(self, x, y):
-        with torch.no_grad():
-            x = x.to(self._device)
-            y = y.to(self._device)
-            recon_x, z_posterior = self.model_(x)
-
-            list_recon_loss = dict()
-            list_swd = dict()
-            list_l1 = dict()
-
-            l1_loss, bce_loss, swd_loss = 0, 0, 0
-
-            for cls in range(self.num_classes):
-                recon_x_cls = recon_x[y == cls]
-                x_cls = x[y == cls]
-
-                z_cls = z_posterior[y == cls]
-
-                z_sample = self._distribution_fn(z_cls.shape[0]).to(self._device)
-
-                recon_loss = F.binary_cross_entropy(recon_x_cls, x_cls)
-                latent_ws_dist = sliced_wasserstein_distance(encoded_samples=z_cls, distribution_samples=z_sample,
-                                                             num_projections=self.num_projections_, p=self.p_,
-                                                             device=self._device)
-
-                l1 = F.l1_loss(recon_x_cls, x_cls)
-
-                list_swd[cls] = latent_ws_dist
-                list_recon_loss[cls] = recon_loss
-                list_l1[cls] = l1
-
-                bce_loss += recon_loss
-                l1_loss += l1
-                swd_loss += latent_ws_dist
-
-            loss = bce_loss + float(self.weight) * swd_loss + l1_loss
-
-            return {
-                'list_recon': list_recon_loss,
-                'list_swd': list_swd,
-                'list_l1': list_l1,
-
-                'loss': loss,
-                'recon_loss':bce_loss,
-                'swd_loss': swd_loss,
-                'l1_loss': l1_loss,
-
-                'encode': z_posterior,
-                'decode': recon_x
-            }
+        # reset gradients
+        self.optimizer.zero_grad()
+        # autoencoder forward pass and loss
+        evals = self.eval_on_batch(x, y)
+        return evals
 
     def eval_on_batch(self, x, y):
 
