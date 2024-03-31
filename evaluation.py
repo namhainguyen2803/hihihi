@@ -121,27 +121,35 @@ def main():
             list_encoded_images.append(test_evals["encode"].detach())
             list_decoded_images.append(test_evals["decode"].detach())
 
-        tensor_real_images = torch.cat(list_real_images, dim=0)
-        tensor_labels = torch.cat(list_labels, dim=0)
-        tensor_encoded_images = torch.cat(list_encoded_images, dim=0)
-        tensor_decoded_images = torch.cat(list_decoded_images, dim=0)
+        tensor_real_images = torch.cat(list_real_images, dim=0).cpu()
+        tensor_labels = torch.cat(list_labels, dim=0).cpu()
+        tensor_encoded_images = torch.cat(list_encoded_images, dim=0).cpu()
+        tensor_decoded_images = torch.cat(list_decoded_images, dim=0).cpu()
         tensor_generated_images = generate_image(model=model,
                                                  prior_distribution=distribution_fn,
                                                  num_images=tensor_real_images.shape[0],
-                                                 device=device)
+                                                 device=device).cpu()
 
         num_images = tensor_real_images.shape[0]
         print(num_images)
 
-        print(tensor_real_images.shape, tensor_labels.shape, tensor_encoded_images.shape, tensor_decoded_images.shape, tensor_generated_images.shape)
+        print(tensor_real_images.shape,
+              tensor_labels.shape,
+              tensor_encoded_images.shape,
+              tensor_decoded_images.shape,
+              tensor_generated_images.shape)
 
         tensor_flatten_real_images = tensor_real_images.view(num_images, -1)
         tensor_flatten_encoded_images = tensor_encoded_images.view(num_images, -1)
         tensor_flatten_decoded_images = tensor_decoded_images.view(num_images, -1)
         tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
 
-        RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
+        print(tensor_flatten_real_images.shape, 
+              tensor_flatten_encoded_images.shape,
+              tensor_flatten_decoded_images.shape,
+              tensor_flatten_generated_images.shape)
 
+        RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
         print(f"Reconstruction loss: {RL}")
 
         theta = rand_projections(dim=tensor_flatten_real_images.shape[-1],
