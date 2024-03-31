@@ -20,6 +20,7 @@ def main():
                              'e.g: /kaggle/input/swae_fairsw/pytorch/fefbsw_200epochs/1/mnist_epoch_200.pth')
 
     parser.add_argument('--dataset', default='mnist', help='dataset name')
+    parser.add_argument('--num-classes', type=int, default=10, help='number of classes')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
 
@@ -98,11 +99,13 @@ def main():
 
     model.load_state_dict(torch.load(args.pretrained_weight))
 
-    evaluator = SWAEBatchTrainer(autoencoder=model, optimizer=None,
+    evaluator = SWAEBatchTrainer(autoencoder=model,
+                                 optimizer=None,
                                  distribution_fn=distribution_fn,
                                  num_classes=data_loader.num_classes,
                                  num_projections=args.num_projections,
-                                 weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
+                                 weight_swd=args.weight_swd,
+                                 weight_fsw=args.weight_fsw,
                                  device=device, method=args.method)
 
     with torch.no_grad():
