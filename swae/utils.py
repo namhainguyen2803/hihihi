@@ -287,7 +287,7 @@ def sliced_wasserstein_distance(encoded_samples,
         projections = rand_projections(dim=embedding_dim, num_projections=num_projections, device=device)
     else:
         projections = theta.to(device)
-
+    print(f"Shape of projections matrix: {projections.shape}")
     encoded_projections = encoded_samples.matmul(projections.transpose(0, 1))
     distribution_projections = (distribution_samples.matmul(projections.transpose(0, 1)))
     wasserstein_distance = (torch.sort(encoded_projections.transpose(0, 1), dim=1)[0] -
