@@ -23,6 +23,7 @@ def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
     parser.add_argument('--dataset', default='mnist', help='dataset name')
+    parser.add_argument('--num-classes', type=int, default=10, help='number of classes')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
     parser.add_argument('--batch-size', type=int, default=500, metavar='N',
