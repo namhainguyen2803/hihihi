@@ -144,7 +144,7 @@ def main():
         tensor_flatten_decoded_images = tensor_decoded_images.view(num_images, -1)
         tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
 
-        print(tensor_flatten_real_images.shape, 
+        print(tensor_flatten_real_images.shape,
               tensor_flatten_encoded_images.shape,
               tensor_flatten_decoded_images.shape,
               tensor_flatten_generated_images.shape)
@@ -156,8 +156,8 @@ def main():
                                  num_projections=args.num_projections,
                                  device=device)
 
-        WG = sliced_wasserstein_distance(encoded_samples=tensor_generated_images,
-                                         distribution_samples=tensor_real_images,
+        WG = sliced_wasserstein_distance(encoded_samples=tensor_flatten_generated_images,
+                                         distribution_samples=tensor_flatten_real_images,
                                          num_projections=args.num_projections,
                                          p=2,
                                          device=device,
