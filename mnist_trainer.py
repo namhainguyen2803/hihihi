@@ -248,15 +248,15 @@ def main():
                                                                          theta=None,
                                                                          theta_latent=None,
                                                                          device=device)
-            print(f"In epoch {epoch + 1}, when evaluating train loader:")
-            print(f"Reconstruction loss (RL): {RL}")
-            print(f"Wasserstein distance between generated and real images (WG): {WG}")
-            print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
-            print(f"Fairness (F): {F}")
-            print(f"Averaging distance (AD): {AD}")
-            print(f"Fairness in images space (FI): {F_images}")
-            print(f"Averaging distance in images space (ADI): {AD_images}")
-            print()
+            print(f"***** In epoch {epoch + 1} *****")
+            print("When evaluating train loader:")
+            print(f" +) Reconstruction loss (RL): {RL}")
+            print(f" +) Wasserstein distance between generated and real images (WG): {WG}")
+            print(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
+            print(f" +) Fairness (F): {F}")
+            print(f" +) Averaging distance (AD): {AD}")
+            print(f" +) Fairness in images space (FI): {F_images}")
+            print(f" +) Averaging distance in images space (ADI): {AD_images}")
 
             RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
                                                                          model=model,
@@ -266,14 +266,14 @@ def main():
                                                                          theta=None,
                                                                          theta_latent=None,
                                                                          device=device)
-            print(f"In epoch {epoch + 1}, when evaluating test loader:")
-            print(f"Reconstruction loss (RL): {RL}")
-            print(f"Wasserstein distance between generated and real images (WG): {WG}")
-            print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
-            print(f"Fairness (F): {F}")
-            print(f"Averaging distance (AD): {AD}")
-            print(f"Fairness in images space (FI): {F_images}")
-            print(f"Averaging distance in images space (ADI): {AD_images}")
+            print("When evaluating test loader:")
+            print(f" +) Reconstruction loss (RL): {RL}")
+            print(f" +) Wasserstein distance between generated and real images (WG): {WG}")
+            print(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
+            print(f" +) Fairness (F): {F}")
+            print(f" +) Averaging distance (AD): {AD}")
+            print(f" +) Fairness in images space (FI): {F_images}")
+            print(f" +) Averaging distance in images space (ADI): {AD_images}")
             print()
 
             list_RL.append(RL)
