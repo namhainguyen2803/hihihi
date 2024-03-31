@@ -131,6 +131,7 @@ def main():
                                                  device=device)
 
         num_images = tensor_real_images.shape[0]
+        print(num_images)
 
         tensor_flatten_real_images = tensor_real_images.view(num_images, -1)
         tensor_flatten_encoded_images = tensor_encoded_images.view(num_images, -1)
