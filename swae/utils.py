@@ -285,7 +285,6 @@ def sliced_wasserstein_distance(encoded_samples,
 
     if theta is None:
         projections = rand_projections(dim=embedding_dim, num_projections=num_projections, device=device)
-        print("cac")
     else:
         projections = theta.to(device)
 
