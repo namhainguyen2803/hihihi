@@ -140,12 +140,10 @@ def main():
               tensor_generated_images.shape)
 
         tensor_flatten_real_images = tensor_real_images.view(num_images, -1)
-        tensor_flatten_encoded_images = tensor_encoded_images.view(num_images, -1)
         tensor_flatten_decoded_images = tensor_decoded_images.view(num_images, -1)
         tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
 
         print(tensor_flatten_real_images.shape,
-              tensor_flatten_encoded_images.shape,
               tensor_flatten_decoded_images.shape,
               tensor_flatten_generated_images.shape)
 
@@ -157,6 +155,10 @@ def main():
                                  num_projections=args.num_projections,
                                  device=device)
 
+        theta_latent = rand_projections(dim=tensor_encoded_images.shape[-1],
+                                        num_projections=args.num_projections,
+                                        device=device)
+
         WG = sliced_wasserstein_distance(encoded_samples=tensor_flatten_generated_images,
                                          distribution_samples=tensor_flatten_real_images,
                                          num_projections=args.num_projections,
@@ -167,9 +169,7 @@ def main():
         print(f"Wasserstein distance between generated and real images: {WG}")
 
         prior_samples = distribution_fn(num_images).to(device)
-        theta_latent = rand_projections(dim=tensor_encoded_images.shape[-1],
-                                        num_projections=args.num_projections,
-                                        device=device)
+
         LP = sliced_wasserstein_distance(encoded_samples=tensor_encoded_images,
                                          distribution_samples=prior_samples,
                                          num_projections=args.num_projections,
@@ -179,14 +179,14 @@ def main():
 
         print(f"Wasserstein distance between posterior and prior distribution: {LP}")
 
-        F, AD = compute_fairness_and_averaging_distance(list_features=tensor_flatten_encoded_images,
+        F, AD = compute_fairness_and_averaging_distance(list_features=tensor_encoded_images,
                                                         list_labels=tensor_labels,
                                                         prior_distribution=distribution_fn,
                                                         num_classes=data_loader.num_classes,
                                                         device=device,
                                                         num_projections=args.num_projections,
                                                         dim=tensor_encoded_images.shape[-1],
-                                                        theta=theta)
+                                                        theta=theta_latent)
 
         print(f"Fairness: {F}")
         print(f"Averaging distance: {AD}")
