@@ -17,7 +17,7 @@ from swae.trainer import SWAEBatchTrainer
 from torchvision import datasets, transforms
 from dataloader.dataloader import *
 from swae.utils import *
-from evaluate import *
+from eval_functions import *
 
 
 def main():
@@ -168,14 +168,14 @@ def main():
             pre_test_targets.append(y_test)
 
         pre_test_encode, pre_test_targets = torch.cat(pre_test_encode), torch.cat(pre_test_targets)
-        pre_pairwise_swd, pre_avg_swd = calculate_pairwise_swd_2(list_features=pre_test_encode,
-                                                                 list_labels=pre_test_targets,
-                                                                 prior_distribution=distribution_fn,
-                                                                 num_classes=data_loader.num_classes,
-                                                                 device=device,
-                                                                 num_projections=args.num_projections)
-        print(f"In pre training, Pairwise swd distances 2 among all classes: {pre_pairwise_swd}")
-        print(f"In pre training, Avg swd distances 2 among all classes: {pre_avg_swd.item()}")
+        pre_pairwise_swd, pre_avg_swd = compute_fairness_and_averaging_distance(list_features=pre_test_encode,
+                                                                                list_labels=pre_test_targets,
+                                                                                prior_distribution=distribution_fn,
+                                                                                num_classes=data_loader.num_classes,
+                                                                                device=device,
+                                                                                num_projections=args.num_projections)
+        print(f"In pre training, Fairness score in test set: {pre_pairwise_swd}")
+        print(f"In pre training, Averaging distance score in test set: {pre_avg_swd.item()}")
 
         list_fairness.append(pre_pairwise_swd)
         list_avg_swd.append(pre_avg_swd.item())
@@ -199,14 +199,7 @@ def main():
                     batch['loss'].item()))
 
         model.eval()
-        # evaluate autoencoder on test dataset
-        # keep track swd gap of each gap, reconstruction loss of each gap
         test_encode, test_targets, test_loss = list(), list(), 0.0
-        posterior_gap = [0 for _ in range(data_loader.num_classes)]
-        reconstruction_loss = [0 for _ in range(data_loader.num_classes)]
-        list_l1 = [0 for _ in range(data_loader.num_classes)]
-        num_instances = [0 for _ in range(data_loader.num_classes)]
-
         train_encode, train_targets, train_loss = list(), list(), 0.0
 
         with torch.no_grad():
@@ -225,25 +218,16 @@ def main():
                 test_loss += test_evals['loss'].item()
                 test_targets.append(y_test)
 
-                # update evaluation incrementally
-                for cls_id in range(data_loader.num_classes):
-                    if cls_id in test_evals['list_recon'].keys():
-                        reconstruction_loss[cls_id] += test_evals['list_recon'][cls_id]
-
-                    if cls_id in test_evals['list_swd'].keys():
-                        posterior_gap[cls_id] += test_evals['list_swd'][cls_id]
-
-                    if cls_id in test_evals['list_l1'].keys():
-                        list_l1[cls_id] += test_evals['list_l1'][cls_id]
-
-                    num_instances[cls_id] += x_test[y_test == cls_id].shape[0]
-
-            train_wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
-                                                  test_loader=train_loader, device=device)
+            train_wd_gen = wasserstein_distance_of_generated_images_and_ground_truth_images(model=model,
+                                                                                            prior_distribution=distribution_fn,
+                                                                                            test_loader=train_loader,
+                                                                                            device=device)
             train_list_gen_ws.append(train_wd_gen)
 
-            wd_gen = wasserstein_evaluation(model=model, prior_distribution=distribution_fn,
-                                            test_loader=test_loader, device=device)
+            wd_gen = wasserstein_distance_of_generated_images_and_ground_truth_images(model=model,
+                                                                                      prior_distribution=distribution_fn,
+                                                                                      test_loader=test_loader,
+                                                                                      device=device)
             list_gen_ws.append(wd_gen)
 
             print()
@@ -258,35 +242,25 @@ def main():
             print(f"SWD distance between generated images and training set: {train_wd_gen}")
             print(f"SWD distance between generated images and testing set: {wd_gen}")
 
-            print()
-            print("Evaluation of each class:")
-            print(f"Fairness of Reconstruction loss: {calculate_fairness(reconstruction_loss)}, {reconstruction_loss}")
-            print()
-            print(f"Fairness of L1 loss: {calculate_fairness(list_l1)}, {list_l1}")
-            print()
-            print(f"Fairness of Posterior gap: {calculate_fairness(posterior_gap)}, {posterior_gap}")
-            print("########################################")
-            print()
-
             test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-            pairwise_swd_2, avg_swd_2 = calculate_pairwise_swd_2(list_features=test_encode,
-                                                                 list_labels=test_targets,
-                                                                 prior_distribution=distribution_fn,
-                                                                 num_classes=data_loader.num_classes,
-                                                                 device=device,
-                                                                 num_projections=args.num_projections)
+            pairwise_swd_2, avg_swd_2 = compute_fairness_and_averaging_distance(list_features=test_encode,
+                                                                                list_labels=test_targets,
+                                                                                prior_distribution=distribution_fn,
+                                                                                num_classes=data_loader.num_classes,
+                                                                                device=device,
+                                                                                num_projections=args.num_projections)
             print(f"In testing, Pairwise swd distances 2 among all classes: {pairwise_swd_2}")
             print(f"In testing, Avg swd distances 2 among all classes: {avg_swd_2}")
             list_fairness.append(pairwise_swd_2)
             list_avg_swd.append(avg_swd_2.item())
 
             train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
-            train_pairwise_swd_2, train_avg_swd_2 = calculate_pairwise_swd_2(list_features=train_encode,
-                                                                             list_labels=train_targets,
-                                                                             prior_distribution=distribution_fn,
-                                                                             num_classes=data_loader.num_classes,
-                                                                             device=device,
-                                                                             num_projections=args.num_projections)
+            train_pairwise_swd_2, train_avg_swd_2 = compute_fairness_and_averaging_distance(list_features=train_encode,
+                                                                                            list_labels=train_targets,
+                                                                                            prior_distribution=distribution_fn,
+                                                                                            num_classes=data_loader.num_classes,
+                                                                                            device=device,
+                                                                                            num_projections=args.num_projections)
             print(f"In training, Pairwise swd distances 2 among all classes: {train_pairwise_swd_2}")
             print(f"In training, Avg swd distances 2 among all classes: {train_avg_swd_2}")
             train_list_fairness.append(train_pairwise_swd_2)

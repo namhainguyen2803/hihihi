@@ -153,3 +153,11 @@ class SWAEBatchTrainer:
             'decode': recon_x,
             'l1': l1
         }
+
+    def forward(self, x):
+        x = x.to(self._device)
+        recon_x, z_posterior = self.model_(x)
+        return {
+            'encode': z_posterior,
+            'decode': recon_x
+        }

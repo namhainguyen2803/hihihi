@@ -279,19 +279,19 @@ def sliced_wasserstein_distance(encoded_samples,
                                 distribution_samples,
                                 num_projections=50,
                                 p=2,
-                                device='cpu'):
+                                device='cpu',
+                                theta=None):
     embedding_dim = distribution_samples.size(1)
-    projections = rand_projections(dim=embedding_dim, num_projections=num_projections, device=device)
+
+    if theta is None:
+        projections = rand_projections(dim=embedding_dim, num_projections=num_projections, device=device)
+        print("cac")
+    else:
+        projections = theta.to(device)
+
     encoded_projections = encoded_samples.matmul(projections.transpose(0, 1))
     distribution_projections = (distribution_samples.matmul(projections.transpose(0, 1)))
     wasserstein_distance = (torch.sort(encoded_projections.transpose(0, 1), dim=1)[0] -
                             torch.sort(distribution_projections.transpose(0, 1), dim=1)[0])
     wasserstein_distance = torch.pow(wasserstein_distance, p)
     return wasserstein_distance.mean()
-
-
-def generate_image(model, prior_distribution, num_images, device='cpu'):
-    with torch.no_grad():
-        z_sample = prior_distribution(num_images).to(device)
-        x_synthesis = model.generate(z_sample).to(device)
-        return x_synthesis
