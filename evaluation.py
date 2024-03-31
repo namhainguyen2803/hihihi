@@ -27,10 +27,10 @@ def main():
     parser.add_argument('--batch-size', type=int, default=500, metavar='N',
                         help='input batch size for training (default: 500)')
 
-    parser.add_argument('--weight_swd', type=float, default=1,
-                        help='weight of swd (default: 1)')
-    parser.add_argument('--weight_fsw', type=float, default=1,
-                        help='weight of fsw (default: 1)')
+    parser.add_argument('--weight_swd', type=float, default=8,
+                        help='weight of swd (default: 8)')
+    parser.add_argument('--weight_fsw', type=float, default=0.5,
+                        help='weight of fsw (default: 0.5)')
 
     parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
                         help='method (default: FEFBSW)')

@@ -8,7 +8,7 @@ def generate_image(model,
                    device='cpu'):
     with torch.no_grad():
         z_sample = prior_distribution(num_images).to(device)
-        x_synthesis = model.generate(z_sample).to(device)
+        x_synthesis = model.generate(z_sample.to(model.device)).to(device)
         return x_synthesis
 
 
@@ -81,7 +81,7 @@ def compute_fairness_and_averaging_distance_in_images_space(model,
                                          distribution_samples=flatten_generated_images,
                                          num_projections=num_projections,
                                          p=2,
-                                         device='cpu',
+                                         device=device,
                                          theta=theta)
 
         list_ws_distance.append(ws)
@@ -98,8 +98,6 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
         list_labels = list()
         list_encoded_images = list()
         list_decoded_images = list()
-
-        each_class_images = dict()
 
         for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
             list_real_images.append(x_test)
