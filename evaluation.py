@@ -98,6 +98,8 @@ def main():
 
     model.load_state_dict(torch.load(args.pretrained_weight))
 
+    device = 'cpu'
+
     evaluator = SWAEBatchTrainer(autoencoder=model, optimizer=None,
                                  distribution_fn=distribution_fn,
                                  num_classes=data_loader.num_classes,
