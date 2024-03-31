@@ -33,11 +33,6 @@ def main():
     parser.add_argument('--batch-size', type=int, default=500, metavar='N',
                         help='input batch size for training (default: 500)')
 
-    parser.add_argument('--epochs', type=int, default=200, metavar='N',
-                        help='number of epochs to train (default: 30)')
-    parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
-                        help='learning rate (default: 0.0001)')
-
     parser.add_argument('--weight_swd', type=float, default=1,
                         help='weight of swd (default: 1)')
     parser.add_argument('--weight_fsw', type=float, default=1,
@@ -91,17 +86,6 @@ def main():
     else:
         model = None
 
-    if args.optimizer == 'rmsprop':
-        optimizer = optim.RMSprop(model.parameters(), lr=args.lr, alpha=args.alpha)
-    elif args.optimizer == 'adam':
-        optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
-    elif args.optimizer == 'adamax':
-        optimizer = optim.Adamax(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
-    elif args.optimizer == 'adamW':
-        optimizer = optim.AdamW(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
-    else:
-        optimizer = optim.SGD(model.parameters(), lr=args.lr)
-
     if args.dataset == 'mnist':
         if args.distribution == 'circle':
             distribution_fn = rand_cirlce2d
@@ -121,7 +105,7 @@ def main():
 
     model.load_state_dict(torch.load(args.pretrained_weight)).cpu()
 
-    evaluator = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer,
+    evaluator = SWAEBatchTrainer(autoencoder=model, optimizer=None,
                                  distribution_fn=distribution_fn,
                                  num_classes=data_loader.num_classes,
                                  num_projections=args.num_projections,
