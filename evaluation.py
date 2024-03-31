@@ -131,21 +131,9 @@ def main():
                                                  device=device).cpu()
 
         num_images = tensor_real_images.shape[0]
-        print(num_images)
-
-        print(tensor_real_images.shape,
-              tensor_labels.shape,
-              tensor_encoded_images.shape,
-              tensor_decoded_images.shape,
-              tensor_generated_images.shape)
 
         tensor_flatten_real_images = tensor_real_images.view(num_images, -1)
-        tensor_flatten_decoded_images = tensor_decoded_images.view(num_images, -1)
         tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
-
-        print(tensor_flatten_real_images.shape,
-              tensor_flatten_decoded_images.shape,
-              tensor_flatten_generated_images.shape)
 
         RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
         print(f"Reconstruction loss: {RL}")
