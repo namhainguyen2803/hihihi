@@ -248,7 +248,7 @@ def main():
                                                                          theta=None,
                                                                          theta_latent=None,
                                                                          device=device)
-            print("In pre-training, when evaluating train loader:")
+            print(f"In epoch {epoch + 1}, when evaluating train loader:")
             print(f"Reconstruction loss (RL): {RL}")
             print(f"Wasserstein distance between generated and real images (WG): {WG}")
             print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
@@ -266,7 +266,7 @@ def main():
                                                                          theta=None,
                                                                          theta_latent=None,
                                                                          device=device)
-            print("In pre-training, when evaluating test loader:")
+            print(f"In epoch {epoch + 1}, when evaluating test loader:")
             print(f"Reconstruction loss (RL): {RL}")
             print(f"Wasserstein distance between generated and real images (WG): {WG}")
             print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
@@ -287,6 +287,8 @@ def main():
             if (epoch + 1) == args.epochs:
                 # save model
                 torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
+                train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
+                test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
                 test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
                 train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
                 if args.dataset == "mnist":
