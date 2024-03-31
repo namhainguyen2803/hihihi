@@ -103,7 +103,7 @@ def main():
 
     print(model)
 
-    model.load_state_dict(torch.load(args.pretrained_weight)).cpu()
+    model.load_state_dict(torch.load(args.pretrained_weight))
 
     evaluator = SWAEBatchTrainer(autoencoder=model, optimizer=None,
                                  distribution_fn=distribution_fn,
