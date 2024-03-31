@@ -8,7 +8,8 @@ def generate_image(model,
                    device='cpu'):
     with torch.no_grad():
         z_sample = prior_distribution(num_images).to(device)
-        x_synthesis = model.generate(z_sample.to('cuda')).to(device)
+        model_device = next(model.parameters()).device
+        x_synthesis = model.generate(z_sample.to(model_device)).to(device)
         return x_synthesis
 
 
