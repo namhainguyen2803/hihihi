@@ -1,19 +1,12 @@
 import argparse
 import os
-import matplotlib as mpl
-from sklearn.manifold import TSNE
-from swae.models.cifar10 import CIFAR10Autoencoder
-import matplotlib.pyplot as plt
-import torch
-import torch.optim as optim
-import torchvision.utils as vutils
+
+from dataloader.dataloader import *
+from eval_functions import *
 from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
+from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
-from torchvision import datasets, transforms
-from dataloader.dataloader import *
-from swae.utils import *
-from eval_functions import *
 import torch.nn.functional as F
 
 
@@ -144,7 +137,7 @@ def main():
         tensor_flatten_decoded_images = tensor_decoded_images.view(num_images, -1)
         tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
 
-        RL = F.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
+        RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
 
         print(f"Reconstruction loss: {RL}")
 
@@ -194,6 +187,7 @@ def main():
                                                                                       theta=theta)
         print(f"Fairness in images space: {F_images}")
         print(f"Averaging distance in images space: {AD_images}")
+
 
 if __name__ == '__main__':
     main()

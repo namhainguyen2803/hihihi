@@ -1,9 +1,5 @@
-import numpy as np
-
 import torch
 import torch.nn.functional as F
-from swae.utils import *
-from swae.distributions import rand_cirlce2d
 from swae.utils import *
 
 
