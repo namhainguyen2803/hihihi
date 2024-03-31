@@ -210,3 +210,6 @@ def main():
                                                                                       theta=theta)
         print(f"Fairness in images space: {F_images}")
         print(f"Averaging distance in images space: {AD_images}")
+
+if __name__ == '__main__':
+    main()
