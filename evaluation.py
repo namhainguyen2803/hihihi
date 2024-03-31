@@ -98,8 +98,6 @@ def main():
 
     model.load_state_dict(torch.load(args.pretrained_weight))
 
-    device = 'cpu'
-
     evaluator = SWAEBatchTrainer(autoencoder=model, optimizer=None,
                                  distribution_fn=distribution_fn,
                                  num_classes=data_loader.num_classes,
@@ -154,6 +152,7 @@ def main():
         RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
         print(f"Reconstruction loss: {RL}")
 
+        device = 'cpu'
         theta = rand_projections(dim=tensor_flatten_real_images.shape[-1],
                                  num_projections=args.num_projections,
                                  device=device)
