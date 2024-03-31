@@ -107,87 +107,14 @@ def main():
 
     with torch.no_grad():
 
-        list_real_images = list()
-        list_labels = list()
-        list_encoded_images = list()
-        list_decoded_images = list()
-
-        for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-            list_real_images.append(x_test)
-            list_labels.append(y_test)
-
-            test_evals = evaluator.forward(x_test)
-
-            list_encoded_images.append(test_evals["encode"].detach())
-            list_decoded_images.append(test_evals["decode"].detach())
-
-        tensor_real_images = torch.cat(list_real_images, dim=0).cpu()
-        tensor_labels = torch.cat(list_labels, dim=0).cpu()
-        tensor_encoded_images = torch.cat(list_encoded_images, dim=0).cpu()
-        tensor_decoded_images = torch.cat(list_decoded_images, dim=0).cpu()
-        tensor_generated_images = generate_image(model=model,
-                                                 prior_distribution=distribution_fn,
-                                                 num_images=tensor_real_images.shape[0],
-                                                 device=device).cpu()
-
-        num_images = tensor_real_images.shape[0]
-
-        tensor_flatten_real_images = tensor_real_images.view(num_images, -1)
-        tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
-
-        RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
-        print(f"Reconstruction loss: {RL}")
-
-        device = 'cpu'
-        theta = rand_projections(dim=tensor_flatten_real_images.shape[-1],
-                                 num_projections=args.num_projections,
-                                 device=device)
-
-        theta_latent = rand_projections(dim=tensor_encoded_images.shape[-1],
-                                        num_projections=args.num_projections,
-                                        device=device)
-
-        WG = sliced_wasserstein_distance(encoded_samples=tensor_flatten_generated_images,
-                                         distribution_samples=tensor_flatten_real_images,
-                                         num_projections=args.num_projections,
-                                         p=2,
-                                         device=device,
-                                         theta=theta)
-
-        print(f"Wasserstein distance between generated and real images: {WG}")
-
-        prior_samples = distribution_fn(num_images).to(device)
-
-        LP = sliced_wasserstein_distance(encoded_samples=tensor_encoded_images,
-                                         distribution_samples=prior_samples,
-                                         num_projections=args.num_projections,
-                                         p=2,
-                                         device=device,
-                                         theta=theta_latent)
-
-        print(f"Wasserstein distance between posterior and prior distribution: {LP}")
-
-        F, AD = compute_fairness_and_averaging_distance(list_features=tensor_encoded_images,
-                                                        list_labels=tensor_labels,
-                                                        prior_distribution=distribution_fn,
-                                                        num_classes=data_loader.num_classes,
-                                                        device=device,
-                                                        num_projections=args.num_projections,
-                                                        dim=tensor_encoded_images.shape[-1],
-                                                        theta=theta_latent)
-
-        print(f"Fairness: {F}")
-        print(f"Averaging distance: {AD}")
-
-        F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
-                                                                                      prior_distribution=distribution_fn,
-                                                                                      test_loader=test_loader,
-                                                                                      device=device,
-                                                                                      num_projections=args.num_projections,
-                                                                                      theta=theta)
-        print(f"Fairness in images space: {F_images}")
-        print(f"Averaging distance in images space: {AD_images}")
-
+        ultimate_evaluation(args=args,
+                            model=model,
+                            evaluator=evaluator,
+                            test_loader=test_loader,
+                            prior_distribution=distribution_fn,
+                            theta=None,
+                            theta_latent=None,
+                            device=device)
 
 if __name__ == '__main__':
     main()

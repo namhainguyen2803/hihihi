@@ -11,41 +11,6 @@ def generate_image(model,
         x_synthesis = model.generate(z_sample).to(device)
         return x_synthesis
 
-def wasserstein_distance_of_generated_images_and_ground_truth_images(model,
-                                                                     prior_distribution,
-                                                                     test_loader,
-                                                                     device,
-                                                                     theta,
-                                                                     num_projections=10000):
-    with torch.no_grad():
-        list_real_images = list()
-        list_generated_images = list()
-        model.eval()
-        for images, labels in test_loader:
-            images = images.to(device)
-
-            num_images = images.shape[0]
-            generated_images = generate_image(model=model, prior_distribution=prior_distribution, num_images=num_images,
-                                              device=device)
-
-            flatten_images = images.reshape(num_images, -1)
-            flatten_generated_images = generated_images.reshape(num_images, -1)
-
-            list_real_images.append(flatten_images)
-            list_generated_images.append(flatten_generated_images)
-
-        list_real_images = torch.cat(list_real_images, dim=0).cpu()
-        list_generated_images = torch.cat(list_generated_images, dim=0).cpu()
-
-        ws = sliced_wasserstein_distance(encoded_samples=list_generated_images,
-                                         distribution_samples=list_real_images,
-                                         num_projections=num_projections,
-                                         p=2,
-                                         device='cpu',
-                                         theta=theta)
-
-        return ws
-
 
 def compute_fairness(list_metric):
     num_classes = len(list_metric)
@@ -86,72 +51,46 @@ def compute_fairness_and_averaging_distance(list_features,
     return compute_fairness(dist_swd), compute_averaging_distance(dist_swd)
 
 
-def wasserstein_distance_of_generated_images_and_each_class_ground_truth_images(model,
-                                                                                prior_distribution,
-                                                                                test_loader,
-                                                                                device,
-                                                                                num_projections=10000,
-                                                                                theta=None):
-    model.eval()
-    with torch.no_grad():
-        list_real_images = dict()
-        list_ws_distance = list()
-
-        images_dim = 0
-        for images, labels in test_loader:
-            images = images.to(device)
-            num_images = images.shape[0]
-            images_dim = torch.prod(images.shape[1:])
-            flatten_images = images.reshape(num_images, -1)
-
-            for cls_id in range(torch.unique(labels)):
-                if cls_id in list_real_images:
-                    list_real_images[cls_id].append(flatten_images[labels == cls_id])
-                else:
-                    list_real_images[cls_id] = list()
-                    list_real_images[cls_id].append(flatten_images[labels == cls_id])
-
-        if theta is None:
-            theta = rand_projections(dim=images_dim, num_projections=10000, device='cpu')
-
-        for cls_id, list_flatten_real_images in list_real_images.items():
-            flatten_real_images = torch.cat(list_flatten_real_images, dim=0).cpu()
-            num_images = len(flatten_real_images)
-            generated_images = generate_image(model=model,
-                                              prior_distribution=prior_distribution,
-                                              num_images=num_images,
-                                              device=device)
-            flatten_generated_images = generated_images.reshape(num_images, -1)
-
-            ws = sliced_wasserstein_distance(encoded_samples=flatten_real_images,
-                                             distribution_samples=flatten_generated_images,
-                                             num_projections=num_projections,
-                                             p=2,
-                                             device='cpu',
-                                             theta=theta)
-
-            list_ws_distance.append(ws)
-
-        return list_ws_distance
-
-
 def compute_fairness_and_averaging_distance_in_images_space(model,
                                                             prior_distribution,
-                                                            test_loader,
+                                                            tensor_flatten_real_images,
+                                                            tensor_labels,
+                                                            num_projections,
+                                                            num_classes,
                                                             device,
-                                                            num_projections=10000,
-                                                            theta=None):
-    list_ws_distance = wasserstein_distance_of_generated_images_and_each_class_ground_truth_images(model=model,
-                                                                                                   prior_distribution=prior_distribution,
-                                                                                                   test_loader=test_loader,
-                                                                                                   device=device,
-                                                                                                   num_projections=num_projections,
-                                                                                                   theta=theta)
+                                                            theta):
+    each_class_images = dict()
+    for cls_id in range(num_classes):
+        if cls_id in each_class_images:
+            each_class_images[cls_id].append(tensor_flatten_real_images[tensor_labels == cls_id])
+        else:
+            each_class_images[cls_id] = list()
+            each_class_images[cls_id].append(tensor_flatten_real_images[tensor_labels == cls_id])
+
+    list_ws_distance = list()
+    for cls_id, list_flatten_real_images in each_class_images.items():
+        flatten_real_images = torch.cat(list_flatten_real_images, dim=0).cpu()
+        num_images = len(flatten_real_images)
+        generated_images = generate_image(model=model,
+                                          prior_distribution=prior_distribution,
+                                          num_images=num_images,
+                                          device=device)
+        flatten_generated_images = generated_images.reshape(num_images, -1)
+
+        ws = sliced_wasserstein_distance(encoded_samples=flatten_real_images,
+                                         distribution_samples=flatten_generated_images,
+                                         num_projections=num_projections,
+                                         p=2,
+                                         device='cpu',
+                                         theta=theta)
+
+        list_ws_distance.append(ws)
+
     return compute_fairness(list_ws_distance), compute_averaging_distance(list_ws_distance)
 
 
-def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution, theta=None, theta_latent=None, device='cpu'):
-
+def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution, theta=None, theta_latent=None,
+                        device='cpu'):
     with torch.no_grad():
         model.eval()
 
@@ -246,33 +185,14 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
                                      num_projections=args.num_projections,
                                      device=device)
 
-        for cls_id in range(args.num_classes):
-            if cls_id in list_real_images:
-                each_class_images[cls_id].append(tensor_flatten_real_images[tensor_labels == cls_id])
-            else:
-                each_class_images[cls_id] = list()
-                each_class_images[cls_id].append(tensor_flatten_real_images[tensor_labels == cls_id])
-
-        list_ws_distance = list()
-        for cls_id, list_flatten_real_images in each_class_images.items():
-            flatten_real_images = torch.cat(list_flatten_real_images, dim=0).cpu()
-            num_images = len(flatten_real_images)
-            generated_images = generate_image(model=model,
-                                              prior_distribution=prior_distribution,
-                                              num_images=num_images,
-                                              device=device)
-            flatten_generated_images = generated_images.reshape(num_images, -1)
-
-            ws = sliced_wasserstein_distance(encoded_samples=flatten_real_images,
-                                             distribution_samples=flatten_generated_images,
-                                             num_projections=args.num_projections,
-                                             p=2,
-                                             device='cpu',
-                                             theta=theta)
-
-            list_ws_distance.append(ws)
-
-        F_images, AD_images = compute_fairness(list_ws_distance), compute_averaging_distance(list_ws_distance)
+        F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
+                                                                                      prior_distribution=prior_distribution,
+                                                                                      tensor_flatten_real_images=tensor_flatten_real_images,
+                                                                                      tensor_labels=tensor_labels,
+                                                                                      num_projections=args.num_projections,
+                                                                                      num_classes=args.num_classes,
+                                                                                      device=device,
+                                                                                      theta=theta)
 
         print(f"Fairness in images space (FI): {F_images}")
         print(f"Averaging distance in images space (ADI): {AD_images}")
