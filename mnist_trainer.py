@@ -19,7 +19,7 @@ from dataloader.dataloader import *
 from swae.utils import *
 from eval_functions import *
 
-def main():
+def main(method):
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
     parser.add_argument('--dataset', default='mnist', help='dataset name')
@@ -69,7 +69,7 @@ def main():
                         help='number of epochs to save training artifacts (default: 1)')
     args = parser.parse_args()
     # create output directory
-    
+
     args.outdir = os.path.join(args.outdir, args.method)
 
     imagesdir = os.path.join(args.outdir, 'images')
