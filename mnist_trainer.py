@@ -19,6 +19,8 @@ from dataloader.dataloader import *
 from swae.utils import *
 from eval_functions import *
 
+logging.basicConfig(filename='output.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
@@ -161,8 +163,6 @@ def main():
 
     list_loss = list()
     train_list_loss = list()
-
-    logging.basicConfig(filename='output.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     with torch.no_grad():
         model.eval()
