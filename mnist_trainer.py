@@ -19,8 +19,6 @@ from dataloader.dataloader import *
 from swae.utils import *
 from eval_functions import *
 
-logging.basicConfig(filename='output.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
@@ -33,7 +31,7 @@ def main():
 
     parser.add_argument('--epochs', type=int, default=200, metavar='N',
                         help='number of epochs to train (default: 30)')
-    parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.0001)')
 
     parser.add_argument('--weight_swd', type=float, default=1,
@@ -71,6 +69,9 @@ def main():
                         help='number of epochs to save training artifacts (default: 1)')
     args = parser.parse_args()
     # create output directory
+    
+    args.outdir = os.path.join(args.outdir, args.method)
+
     imagesdir = os.path.join(args.outdir, 'images')
     chkptdir = os.path.join(args.outdir, 'models')
     os.makedirs(args.datadir, exist_ok=True)
@@ -85,6 +86,10 @@ def main():
     torch.manual_seed(args.seed)
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
+
+    logging.basicConfig(filename=f'{args.outdir}/output.log', level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
+
     # log args
     if args.optimizer == 'rmsprop':
         logging.info(
