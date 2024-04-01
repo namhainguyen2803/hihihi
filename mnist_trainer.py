@@ -1,6 +1,6 @@
 import argparse
 import os
-
+import logging
 import matplotlib as mpl
 from sklearn.manifold import TSNE
 
@@ -85,12 +85,12 @@ def main():
         torch.cuda.manual_seed(args.seed)
     # log args
     if args.optimizer == 'rmsprop':
-        print(
+        logging.info(
             'batch size {}\nepochs {}\nRMSprop lr {} alpha {}\ndistribution {}\nusing device {}\nseed set to {}'.format(
                 args.batch_size, args.epochs, args.lr, args.alpha, args.distribution, device.type, args.seed
             ))
     else:
-        print(
+        logging.info(
             'batch size {}\nepochs {}\n{}: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}'.format(
                 args.batch_size, args.epochs, args.optimizer,
                 args.lr, args.beta1, args.beta2, args.distribution,
@@ -162,6 +162,8 @@ def main():
     list_loss = list()
     train_list_loss = list()
 
+    logging.basicConfig(filename='output.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
     with torch.no_grad():
         model.eval()
 
@@ -173,15 +175,15 @@ def main():
                                                                      theta=None,
                                                                      theta_latent=None,
                                                                      device=device)
-        print("In pre-training, when evaluating test loader:")
-        print(f" +) Reconstruction loss (RL): {RL}")
-        print(f" +) Wasserstein distance between generated and real images (WG): {WG}")
-        print(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
-        print(f" +) Fairness (F): {F}")
-        print(f" +) Averaging distance (AD): {AD}")
-        print(f" +) Fairness in images space (FI): {F_images}")
-        print(f" +) Averaging distance in images space (ADI): {AD_images}")
-        print()
+        logging.info("In pre-training, when evaluating test loader:")
+        logging.info(f" +) Reconstruction loss (RL): {RL}")
+        logging.info(f" +) Wasserstein distance between generated and real images (WG): {WG}")
+        logging.info(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
+        logging.info(f" +) Fairness (F): {F}")
+        logging.info(f" +) Averaging distance (AD): {AD}")
+        logging.info(f" +) Fairness in images space (FI): {F_images}")
+        logging.info(f" +) Averaging distance in images space (ADI): {AD_images}")
+        logging.info("")
 
         list_RL.append(RL)
         list_WG.append(WG)
@@ -236,27 +238,9 @@ def main():
             list_loss.append(test_loss)
             train_list_loss.append(train_loss)
 
-            print('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
+            logging.info('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
                                                                   test_loss))
-            print('{{"metric": "loss", "value": {}}}'.format(test_loss))
-
-            # RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-            #                                                              model=model,
-            #                                                              evaluator=trainer,
-            #                                                              test_loader=train_loader,
-            #                                                              prior_distribution=distribution_fn,
-            #                                                              theta=None,
-            #                                                              theta_latent=None,
-            #                                                              device=device)
-            # print(f"***** In epoch {epoch + 1} *****")
-            # print("When evaluating train loader:")
-            # print(f" +) Reconstruction loss (RL): {RL}")
-            # print(f" +) Wasserstein distance between generated and real images (WG): {WG}")
-            # print(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
-            # print(f" +) Fairness (F): {F}")
-            # print(f" +) Averaging distance (AD): {AD}")
-            # print(f" +) Fairness in images space (FI): {F_images}")
-            # print(f" +) Averaging distance in images space (ADI): {AD_images}")
+            logging.info('{{"metric": "loss", "value": {}}}'.format(test_loss))
 
             RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
                                                                          model=model,
@@ -266,15 +250,15 @@ def main():
                                                                          theta=None,
                                                                          theta_latent=None,
                                                                          device=device)
-            print("When evaluating test loader:")
-            print(f" +) Reconstruction loss (RL): {RL}")
-            print(f" +) Wasserstein distance between generated and real images (WG): {WG}")
-            print(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
-            print(f" +) Fairness (F): {F}")
-            print(f" +) Averaging distance (AD): {AD}")
-            print(f" +) Fairness in images space (FI): {F_images}")
-            print(f" +) Averaging distance in images space (ADI): {AD_images}")
-            print()
+            logging.info("When evaluating test loader:")
+            logging.info(f" +) Reconstruction loss (RL): {RL}")
+            logging.info(f" +) Wasserstein distance between generated and real images (WG): {WG}")
+            logging.info(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
+            logging.info(f" +) Fairness (F): {F}")
+            logging.info(f" +) Averaging distance (AD): {AD}")
+            logging.info(f" +) Fairness in images space (FI): {F_images}")
+            logging.info(f" +) Averaging distance in images space (ADI): {AD_images}")
+            logging.info("")
 
             list_RL.append(RL)
             list_WG.append(WG)

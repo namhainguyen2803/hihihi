@@ -66,10 +66,16 @@ def main():
     # build train and test set data loaders
     if args.dataset == 'mnist':
         data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+        args.num_classes = 10
     elif args.dataset == 'cifar10':
         data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
-    else:
+        args.num_classes = 10
+    elif args.dataset == 'cifar100':
         data_loader = None
+        args.num_classes = 100
+    else:
+        raise ('data set {} not supported'.format(args.dataset))
+
     train_loader, test_loader = data_loader.create_dataloader()
 
     # create encoder and decoder
