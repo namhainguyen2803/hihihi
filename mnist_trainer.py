@@ -19,7 +19,7 @@ from dataloader.dataloader import *
 from swae.utils import *
 from eval_functions import *
 
-def main(method):
+def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
     parser.add_argument('--dataset', default='mnist', help='dataset name')
