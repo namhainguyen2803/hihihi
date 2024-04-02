@@ -93,18 +93,20 @@ def main():
                         format='%(asctime)s - %(levelname)s - %(message)s')
 
     # log args
-    if args.optimizer == 'rmsprop':
-        logging.info(
-            'batch size {}\nepochs {}\nRMSprop lr {} alpha {}\ndistribution {}\nusing device {}\nseed set to {}'.format(
-                args.batch_size, args.epochs, args.lr, args.alpha, args.distribution, device.type, args.seed
-            ))
-    else:
-        logging.info(
-            'batch size {}\nepochs {}\n{}: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}'.format(
-                args.batch_size, args.epochs, args.optimizer,
-                args.lr, args.beta1, args.beta2, args.distribution,
-                device.type, args.seed
-            ))
+    with open(output_file, 'a') as f:
+        # log args
+        if args.optimizer == 'rmsprop':
+            f.write(
+                'batch size {}\nepochs {}\nRMSprop lr {} alpha {}\ndistribution {}\nusing device {}\nseed set to {}\n'.format(
+                    args.batch_size, args.epochs, args.lr, args.alpha, args.distribution, device.type, args.seed
+                ))
+        else:
+            f.write(
+                'batch size {}\nepochs {}\n{}: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}\n'.format(
+                    args.batch_size, args.epochs, args.optimizer,
+                    args.lr, args.beta1, args.beta2, args.distribution,
+                    device.type, args.seed
+                ))
 
     # build train and test set data loaders
     if args.dataset == 'mnist':
@@ -182,15 +184,16 @@ def main():
                                                                      theta=None,
                                                                      theta_latent=None,
                                                                      device=device)
-        logging.info("In pre-training, when evaluating test loader:")
-        logging.info(f" +) Reconstruction loss (RL): {RL}")
-        logging.info(f" +) Wasserstein distance between generated and real images (WG): {WG}")
-        logging.info(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
-        logging.info(f" +) Fairness (F): {F}")
-        logging.info(f" +) Averaging distance (AD): {AD}")
-        logging.info(f" +) Fairness in images space (FI): {F_images}")
-        logging.info(f" +) Averaging distance in images space (ADI): {AD_images}")
-        logging.info("")
+        with open(output_file, 'a') as f:
+            f.write("In pre-training, when evaluating test loader:\n")
+            f.write(f" +) Reconstruction loss (RL): {RL}\n")
+            f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
+            f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
+            f.write(f" +) Fairness (F): {F}\n")
+            f.write(f" +) Averaging distance (AD): {AD}\n")
+            f.write(f" +) Fairness in images space (FI): {F_images}\n")
+            f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
+            f.write("\n")
 
         list_RL.append(RL)
         list_WG.append(WG)
@@ -204,6 +207,8 @@ def main():
     print()
     # train networks for n epochs
     for epoch in range(args.epochs):
+        with open(output_file, 'a') as f:
+            f.write('training...\n')
         print('training...')
         model.train()
         # if epoch > 10:
@@ -218,8 +223,14 @@ def main():
                     epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
                     (batch_idx + 1), len(train_loader),
                     batch['loss'].item()))
+                with open(output_file, 'a') as f:
+                    f.write('Train Epoch: {} ({:.2f}%) [{}/{}]\tLoss: {:.6f}\n'.format(
+                        epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
+                        (batch_idx + 1), len(train_loader),
+                        batch['loss'].item()))
 
-        print('evaluating...')
+        with open(output_file, 'a') as f:
+            f.write('evaluating...\n')
         model.eval()
         with torch.no_grad():
 
@@ -245,10 +256,6 @@ def main():
             list_loss.append(test_loss)
             train_list_loss.append(train_loss)
 
-            logging.info('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}'.format(epoch + 1, float(epoch + 1) / (args.epochs) * 100.,
-                                                                  test_loss))
-            logging.info('{{"metric": "loss", "value": {}}}'.format(test_loss))
-
             RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
                                                                          model=model,
                                                                          evaluator=trainer,
@@ -257,15 +264,21 @@ def main():
                                                                          theta=None,
                                                                          theta_latent=None,
                                                                          device=device)
-            logging.info("When evaluating test loader:")
-            logging.info(f" +) Reconstruction loss (RL): {RL}")
-            logging.info(f" +) Wasserstein distance between generated and real images (WG): {WG}")
-            logging.info(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}")
-            logging.info(f" +) Fairness (F): {F}")
-            logging.info(f" +) Averaging distance (AD): {AD}")
-            logging.info(f" +) Fairness in images space (FI): {F_images}")
-            logging.info(f" +) Averaging distance in images space (ADI): {AD_images}")
-            logging.info("")
+
+            with open(output_file, 'a') as f:
+                f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
+                                                                          float(epoch + 1) / (args.epochs) * 100.,
+                                                                          test_loss))
+                f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
+                f.write("When evaluating test loader:\n")
+                f.write(f" +) Reconstruction loss (RL): {RL}\n")
+                f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
+                f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
+                f.write(f" +) Fairness (F): {F}\n")
+                f.write(f" +) Averaging distance (AD): {AD}\n")
+                f.write(f" +) Fairness in images space (FI): {F_images}\n")
+                f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
+                f.write("\n")
 
             list_RL.append(RL)
             list_WG.append(WG)
