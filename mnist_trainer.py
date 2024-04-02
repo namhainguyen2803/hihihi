@@ -87,7 +87,9 @@ def main():
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
 
-    logging.basicConfig(filename=f'{args.outdir}/output.log', level=logging.INFO,
+    output_file = f'{args.outdir}/output.log'
+
+    logging.basicConfig(filename=output_file, level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s')
 
     # log args
