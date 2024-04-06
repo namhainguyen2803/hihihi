@@ -2,7 +2,6 @@ import torch
 from swae.utils import *
 import matplotlib.pyplot as plt
 
-
 def generate_image(model,
                    prior_distribution,
                    num_images=100,
@@ -19,7 +18,7 @@ def compute_fairness(list_metric):
     dist_pairwise = list()
     for cls_id_i in range(num_classes):
         for cls_id_j in range(cls_id_i + 1, num_classes):
-            a = torch.abs(list_metric[cls_id_i] - list_metric[cls_id_j])
+            a = abs(list_metric[cls_id_i] - list_metric[cls_id_j])
             dist_pairwise.append(a)
     return torch.sum(torch.tensor(dist_pairwise)) / len(dist_pairwise)
 
