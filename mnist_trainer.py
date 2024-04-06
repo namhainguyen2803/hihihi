@@ -201,6 +201,7 @@ def main():
         list_AD_images.append(AD_images)
         list_F_images.append(F_images)
 
+    eval_best = F + AD
 
     print()
     # train networks for n epochs
@@ -227,7 +228,7 @@ def main():
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
 
-        if (epoch + 1) % args.log_epoch_interval == 0:
+        if epoch % args.log_epoch_interval == 0:
 
             with open(output_file, 'a') as f:
                 f.write('evaluating...\n')
@@ -286,64 +287,66 @@ def main():
                 list_AD_images.append(AD_images)
                 list_F_images.append(F_images)
 
-                if (epoch + 1) == args.epochs:
-                    # save model
-                    torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
-                    train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
-                    test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-                    test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-                    train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
-                    if args.dataset == "mnist":
-                        # plot
-                        plt.figure(figsize=(10, 10))
-                        plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-                        plt.xlim([-1.5, 1.5])
-                        plt.ylim([-1.5, 1.5])
-                        plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                        plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                        plt.close()
+        if (epoch + 1) == args.num_epochs or F + AD < eval_best:
+            eval_best = F + AD
+            torch.save(model.state_dict(), '{}/{}_epoch_{}_{}.pth'.format(chkptdir, args.dataset, epoch + 1, eval_best))
+            train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
+            test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
+            train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
+            if args.dataset == "mnist":
+                # plot
+                plt.figure(figsize=(10, 10))
+                plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
+                plt.xlim([-1.5, 1.5])
+                plt.ylim([-1.5, 1.5])
+                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.close()
 
-                        plt.figure(figsize=(10, 10))
-                        plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
-                        plt.xlim([-1.5, 1.5])
-                        plt.ylim([-1.5, 1.5])
-                        plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
-                        plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                        plt.close()
+                plt.figure(figsize=(10, 10))
+                plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
+                plt.xlim([-1.5, 1.5])
+                plt.ylim([-1.5, 1.5])
+                plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
+                plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.close()
 
-                    else:
-                        tsne = TSNE(n_components=2, random_state=42)
-                        tsne_result = tsne.fit_transform(test_encode)
+            else:
+                tsne = TSNE(n_components=2, random_state=42)
+                tsne_result = tsne.fit_transform(test_encode)
 
-                        plt.figure(figsize=(10, 10))
-                        plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
-                        plt.title('t-SNE Visualization')
-                        plt.xlabel('t-SNE Component 1')
-                        plt.ylabel('t-SNE Component 2')
-                        plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                        plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                        plt.colorbar(label='Target')
-                        plt.close()
+                plt.figure(figsize=(10, 10))
+                plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
+                plt.title('t-SNE Visualization')
+                plt.xlabel('t-SNE Component 1')
+                plt.ylabel('t-SNE Component 2')
+                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.colorbar(label='Target')
+                plt.close()
 
-                    # save sample input and reconstruction
-                    vutils.save_image(x_test,
-                                      '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+            # save sample input and reconstruction
+            vutils.save_image(x_test,
+                              '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
-                    vutils.save_image(test_evals['decode'].detach(),
-                                      '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
-                                      normalize=True)
+            vutils.save_image(test_evals['decode'].detach(),
+                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                              normalize=True)
 
-                    vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+            vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
 
-                    vutils.save_image(batch['decode'].detach(),
-                                      '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
-                                      normalize=True)
+            vutils.save_image(batch['decode'].detach(),
+                              '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                              normalize=True)
 
-                    gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
-                                               device=device)
-                    vutils.save_image(gen_image,
-                                      '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
-    
+            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
+                                       device=device)
+            vutils.save_image(gen_image,
+                              '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
+
+
+
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
                      f'In testing loss convergence plot of {args.method}', imagesdir,
                      'test_loss_convergence.png')
