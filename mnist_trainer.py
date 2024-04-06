@@ -287,7 +287,7 @@ def main():
                 list_AD_images.append(AD_images)
                 list_F_images.append(F_images)
 
-        if (epoch + 1) == args.num_epochs or F + AD < eval_best:
+        if (epoch + 1) == args.epochs or F + AD < eval_best:
             eval_best = F + AD
             torch.save(model.state_dict(), '{}/{}_epoch_{}_{}.pth'.format(chkptdir, args.dataset, epoch + 1, eval_best))
             train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
