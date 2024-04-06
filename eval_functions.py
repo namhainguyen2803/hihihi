@@ -32,24 +32,14 @@ def compute_fairness_and_averaging_distance(list_features,
                                             list_labels,
                                             prior_distribution,
                                             num_classes,
-                                            device,
-                                            num_projections=10000,
-                                            dim=2,
-                                            theta=None):
+                                            device):
     with torch.no_grad():
         dist_swd = list()
-        if theta is None:
-            theta = rand_projections(dim=dim, num_projections=10000, device='cpu')
         for cls_id in range(num_classes):
             features_cls = list_features[list_labels == cls_id]
             z_samples = prior_distribution(features_cls.shape[0]).to(device)
-            swd = sliced_wasserstein_distance(encoded_samples=features_cls,
-                                              distribution_samples=z_samples,
-                                              num_projections=num_projections,
-                                              p=2,
-                                              device=device,
-                                              theta=theta)
-            dist_swd.append(swd)
+            wd = compute_true_Wasserstein(X=features_cls, Y=z_samples)
+            dist_swd.append(wd)
     return compute_fairness(dist_swd), compute_averaging_distance(dist_swd)
 
 
@@ -57,10 +47,8 @@ def compute_fairness_and_averaging_distance_in_images_space(model,
                                                             prior_distribution,
                                                             tensor_flatten_real_images,
                                                             tensor_labels,
-                                                            num_projections,
                                                             num_classes,
-                                                            device,
-                                                            theta):
+                                                            device):
     each_class_images = dict()
     for cls_id in range(num_classes):
         if cls_id in each_class_images:
@@ -78,14 +66,7 @@ def compute_fairness_and_averaging_distance_in_images_space(model,
                                           num_images=num_images,
                                           device=device)
         flatten_generated_images = generated_images.reshape(num_images, -1)
-
-        ws = sliced_wasserstein_distance(encoded_samples=flatten_real_images,
-                                         distribution_samples=flatten_generated_images,
-                                         num_projections=num_projections,
-                                         p=2,
-                                         device=device,
-                                         theta=theta)
-
+        ws = compute_true_Wasserstein(X=flatten_generated_images, Y=flatten_real_images)
         list_ws_distance.append(ws)
 
     return compute_fairness(list_ws_distance), compute_averaging_distance(list_ws_distance)
@@ -96,8 +77,6 @@ def ultimate_evaluation(args,
                         evaluator,
                         test_loader,
                         prior_distribution,
-                        theta=None,
-                        theta_latent=None,
                         device='cpu'):
     with torch.no_grad():
         model.eval()
@@ -136,61 +115,26 @@ def ultimate_evaluation(args,
         RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
 
         # Compute WG
-        if theta is None:
-            theta = rand_projections(dim=tensor_flatten_real_images.shape[-1],
-                                     num_projections=args.num_projections,
-                                     device=device)
-
-        WG = sliced_wasserstein_distance(encoded_samples=tensor_flatten_generated_images,
-                                         distribution_samples=tensor_flatten_real_images,
-                                         num_projections=args.num_projections,
-                                         p=2,
-                                         device=device,
-                                         theta=theta)
+        WG = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=tensor_flatten_real_images)
 
         # Compute LP
         prior_samples = prior_distribution(num_images).to(device)
-        if theta_latent is None:
-            theta_latent = rand_projections(dim=tensor_encoded_images.shape[-1],
-                                            num_projections=args.num_projections,
-                                            device=device)
-
-        LP = sliced_wasserstein_distance(encoded_samples=tensor_encoded_images,
-                                         distribution_samples=prior_samples,
-                                         num_projections=args.num_projections,
-                                         p=2,
-                                         device=device,
-                                         theta=theta_latent)
+        LP = compute_true_Wasserstein(X=tensor_encoded_images, Y=prior_samples)
 
         # Compute F and AD in latent space
-        if theta_latent is None:
-            theta_latent = rand_projections(dim=tensor_encoded_images.shape[-1],
-                                            num_projections=args.num_projections,
-                                            device=device)
-
         F, AD = compute_fairness_and_averaging_distance(list_features=tensor_encoded_images,
                                                         list_labels=tensor_labels,
                                                         prior_distribution=prior_distribution,
                                                         num_classes=args.num_classes,
-                                                        device=device,
-                                                        num_projections=args.num_projections,
-                                                        dim=tensor_encoded_images.shape[-1],
-                                                        theta=theta_latent)
+                                                        device=device)
 
-        ### Compute F and AD in image spaces
-        if theta is None:
-            theta = rand_projections(dim=tensor_flatten_real_images.shape[-1],
-                                     num_projections=args.num_projections,
-                                     device=device)
-
+        # Compute F and AD in image space
         F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
                                                                                       prior_distribution=prior_distribution,
                                                                                       tensor_flatten_real_images=tensor_flatten_real_images,
                                                                                       tensor_labels=tensor_labels,
-                                                                                      num_projections=args.num_projections,
                                                                                       num_classes=args.num_classes,
-                                                                                      device=device,
-                                                                                      theta=theta)
+                                                                                      device=device)
 
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)

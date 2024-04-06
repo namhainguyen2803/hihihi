@@ -181,8 +181,6 @@ def main():
                                                                      evaluator=trainer,
                                                                      test_loader=test_loader,
                                                                      prior_distribution=distribution_fn,
-                                                                     theta=None,
-                                                                     theta_latent=None,
                                                                      device=device)
         with open(output_file, 'a') as f:
             f.write("In pre-training, when evaluating test loader:\n")
@@ -229,124 +227,123 @@ def main():
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
 
-        with open(output_file, 'a') as f:
-            f.write('evaluating...\n')
-        model.eval()
-        with torch.no_grad():
-
-            train_encode, train_targets, train_loss = list(), list(), 0.0
-            test_encode, test_targets, test_loss = list(), list(), 0.0
-
-            for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
-                batch = trainer.test_on_batch(x, y)
-
-                train_encode.append(batch['encode'].detach())
-                train_loss += batch['loss'].item()
-                train_targets.append(y)
-
-            for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                test_evals = trainer.test_on_batch(x_test, y_test)
-
-                test_encode.append(test_evals['encode'].detach())
-                test_loss += test_evals['loss'].item()
-                test_targets.append(y_test)
-
-            test_loss /= len(test_loader)
-            train_loss /= len(train_loader)
-            list_loss.append(test_loss)
-            train_list_loss.append(train_loss)
-
-            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                         model=model,
-                                                                         evaluator=trainer,
-                                                                         test_loader=test_loader,
-                                                                         prior_distribution=distribution_fn,
-                                                                         theta=None,
-                                                                         theta_latent=None,
-                                                                         device=device)
+        if (epoch + 1) % args.log_epoch_interval == 0:
 
             with open(output_file, 'a') as f:
-                f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
-                                                                          float(epoch + 1) / (args.epochs) * 100.,
-                                                                          test_loss))
-                f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
-                f.write("When evaluating test loader:\n")
-                f.write(f" +) Reconstruction loss (RL): {RL}\n")
-                f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
-                f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
-                f.write(f" +) Fairness (F): {F}\n")
-                f.write(f" +) Averaging distance (AD): {AD}\n")
-                f.write(f" +) Fairness in images space (FI): {F_images}\n")
-                f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
-                f.write("\n")
+                f.write('evaluating...\n')
+            model.eval()
+            with torch.no_grad():
 
-            list_RL.append(RL)
-            list_WG.append(WG)
-            list_LP.append(LP)
-            list_F.append(F)
-            list_AD.append(AD)
-            list_AD_images.append(AD_images)
-            list_F_images.append(F_images)
+                train_encode, train_targets, train_loss = list(), list(), 0.0
+                test_encode, test_targets, test_loss = list(), list(), 0.0
 
-            if (epoch + 1) == args.epochs:
-                # save model
-                torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
-                train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
-                test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-                test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-                train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
-                if args.dataset == "mnist":
-                    # plot
-                    plt.figure(figsize=(10, 10))
-                    plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-                    plt.xlim([-1.5, 1.5])
-                    plt.ylim([-1.5, 1.5])
-                    plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                    plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                    plt.close()
+                for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
+                    batch = trainer.test_on_batch(x, y)
 
-                    plt.figure(figsize=(10, 10))
-                    plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
-                    plt.xlim([-1.5, 1.5])
-                    plt.ylim([-1.5, 1.5])
-                    plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
-                    plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                    plt.close()
+                    train_encode.append(batch['encode'].detach())
+                    train_loss += batch['loss'].item()
+                    train_targets.append(y)
 
-                else:
-                    tsne = TSNE(n_components=2, random_state=42)
-                    tsne_result = tsne.fit_transform(test_encode)
+                for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
+                    test_evals = trainer.test_on_batch(x_test, y_test)
 
-                    plt.figure(figsize=(10, 10))
-                    plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
-                    plt.title('t-SNE Visualization')
-                    plt.xlabel('t-SNE Component 1')
-                    plt.ylabel('t-SNE Component 2')
-                    plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                    plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
-                    plt.colorbar(label='Target')
-                    plt.close()
+                    test_encode.append(test_evals['encode'].detach())
+                    test_loss += test_evals['loss'].item()
+                    test_targets.append(y_test)
 
-                # save sample input and reconstruction
-                vutils.save_image(x_test,
-                                  '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+                test_loss /= len(test_loader)
+                train_loss /= len(train_loader)
+                list_loss.append(test_loss)
+                train_list_loss.append(train_loss)
 
-                vutils.save_image(test_evals['decode'].detach(),
-                                  '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
-                                  normalize=True)
+                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                             model=model,
+                                                                             evaluator=trainer,
+                                                                             test_loader=test_loader,
+                                                                             prior_distribution=distribution_fn,
+                                                                             device=device)
 
-                vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+                with open(output_file, 'a') as f:
+                    f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
+                                                                              float(epoch + 1) / (args.epochs) * 100.,
+                                                                              test_loss))
+                    f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
+                    f.write("When evaluating test loader:\n")
+                    f.write(f" +) Reconstruction loss (RL): {RL}\n")
+                    f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
+                    f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
+                    f.write(f" +) Fairness (F): {F}\n")
+                    f.write(f" +) Averaging distance (AD): {AD}\n")
+                    f.write(f" +) Fairness in images space (FI): {F_images}\n")
+                    f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
+                    f.write("\n")
 
-                vutils.save_image(batch['decode'].detach(),
-                                  '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
-                                  normalize=True)
+                list_RL.append(RL)
+                list_WG.append(WG)
+                list_LP.append(LP)
+                list_F.append(F)
+                list_AD.append(AD)
+                list_AD_images.append(AD_images)
+                list_F_images.append(F_images)
 
-                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
-                                           device=device)
-                vutils.save_image(gen_image,
-                                  '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
+                if (epoch + 1) == args.epochs:
+                    # save model
+                    torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir, args.dataset, epoch + 1))
+                    train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
+                    test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+                    test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
+                    train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
+                    if args.dataset == "mnist":
+                        # plot
+                        plt.figure(figsize=(10, 10))
+                        plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
+                        plt.xlim([-1.5, 1.5])
+                        plt.ylim([-1.5, 1.5])
+                        plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                        plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                        plt.close()
 
+                        plt.figure(figsize=(10, 10))
+                        plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
+                        plt.xlim([-1.5, 1.5])
+                        plt.ylim([-1.5, 1.5])
+                        plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
+                        plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                        plt.close()
 
+                    else:
+                        tsne = TSNE(n_components=2, random_state=42)
+                        tsne_result = tsne.fit_transform(test_encode)
+
+                        plt.figure(figsize=(10, 10))
+                        plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
+                        plt.title('t-SNE Visualization')
+                        plt.xlabel('t-SNE Component 1')
+                        plt.ylabel('t-SNE Component 2')
+                        plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
+                        plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                        plt.colorbar(label='Target')
+                        plt.close()
+
+                    # save sample input and reconstruction
+                    vutils.save_image(x_test,
+                                      '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+
+                    vutils.save_image(test_evals['decode'].detach(),
+                                      '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                                      normalize=True)
+
+                    vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+
+                    vutils.save_image(batch['decode'].detach(),
+                                      '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                                      normalize=True)
+
+                    gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
+                                               device=device)
+                    vutils.save_image(gen_image,
+                                      '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
+    
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
                      f'In testing loss convergence plot of {args.method}', imagesdir,
                      'test_loss_convergence.png')
