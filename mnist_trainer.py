@@ -72,11 +72,15 @@ def main():
 
     args.outdir = os.path.join(args.outdir, args.method)
 
-    imagesdir = os.path.join(args.outdir, 'images')
-    chkptdir = os.path.join(args.outdir, 'models')
+    outdir_best = os.path.join(args.outdir, "best")
+    outdir_end = os.path.join(args.outdir, "end")
+    outdir_convergence = os.path.join(args.outdir, "convergence")
+
     os.makedirs(args.datadir, exist_ok=True)
-    os.makedirs(imagesdir, exist_ok=True)
-    os.makedirs(chkptdir, exist_ok=True)
+    os.makedirs(outdir_best, exist_ok=True)
+    os.makedirs(outdir_end, exist_ok=True)
+    os.makedirs(outdir_convergence, exist_ok=True)
+
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -226,7 +230,7 @@ def main():
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
 
-        if epoch % args.log_epoch_interval == 0:
+        if (epoch + 1) % args.log_epoch_interval == 0 or (epoch + 1) == args.epochs:
 
             with open(output_file, 'a') as f:
                 f.write('evaluating...\n')
@@ -285,105 +289,102 @@ def main():
                 list_AD_images.append(AD_images)
                 list_F_images.append(F_images)
 
-        if (epoch + 1) == args.epochs or F + AD < eval_best:
+            # update best or end
+            if (epoch + 1) == args.epochs or eval_best > F + AD:
 
-            if (epoch + 1) == args.epochs:
-                imagesdir_epoch = os.path.join(imagesdir, "end")
-                chkptdir_epoch = os.path.join(chkptdir, "end")
+                if (epoch + 1) == args.epochs:
+                    imagesdir_epoch = os.path.join(outdir_end, "images")
+                    chkptdir_epoch = os.path.join(outdir_end, "model")
 
-            else:
-                imagesdir_epoch = os.path.join(imagesdir, "best")
-                chkptdir_epoch = os.path.join(chkptdir, "best")
-                eval_best = F + AD
+                else:
+                    imagesdir_epoch = os.path.join(outdir_best, "images")
+                    chkptdir_epoch = os.path.join(outdir_best, "model")
+                    eval_best = F + AD
 
-            torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir_epoch, args.dataset, epoch + 1))
-            train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
-            test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-            train_encode, train_targets = train_encode.cpu().numpy(), train_targets.cpu().numpy()
-            if args.dataset == "mnist":
-                # plot
-                plt.figure(figsize=(10, 10))
-                plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-                plt.xlim([-1.5, 1.5])
-                plt.ylim([-1.5, 1.5])
-                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir_epoch, epoch + 1))
-                plt.close()
+                os.makedirs(imagesdir_epoch, exist_ok=True)
+                os.makedirs(chkptdir_epoch, exist_ok=True)
 
-                plt.figure(figsize=(10, 10))
-                plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
-                plt.xlim([-1.5, 1.5])
-                plt.ylim([-1.5, 1.5])
-                plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir_epoch, epoch + 1))
-                plt.close()
+                torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
+                test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+                test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
 
-            else:
-                tsne = TSNE(n_components=2, random_state=42)
-                tsne_result = tsne.fit_transform(test_encode)
+                if args.dataset == "mnist":
+                    # plot
+                    plt.figure(figsize=(10, 10))
+                    plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
+                    plt.xlim([-1.5, 1.5])
+                    plt.ylim([-1.5, 1.5])
+                    plt.title(f'Test Latent Space of {args.method} method, F = {F}, W = {AD}')
+                    plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
+                    plt.close()
 
-                plt.figure(figsize=(10, 10))
-                plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
-                plt.title('t-SNE Visualization')
-                plt.xlabel('t-SNE Component 1')
-                plt.ylabel('t-SNE Component 2')
-                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir_epoch, epoch + 1))
-                plt.colorbar(label='Target')
-                plt.close()
+                else:
+                    tsne = TSNE(n_components=2, random_state=42)
+                    tsne_result = tsne.fit_transform(test_encode)
 
-            # save sample input and reconstruction
-            vutils.save_image(x_test,
-                              '{}/{}_test_samples_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1))
+                    plt.figure(figsize=(10, 10))
+                    plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
+                    plt.title('t-SNE Visualization')
+                    plt.xlabel('t-SNE Component 1')
+                    plt.ylabel('t-SNE Component 2')
+                    plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
+                    plt.colorbar(label='Target')
+                    plt.close()
 
-            vutils.save_image(test_evals['decode'].detach(),
-                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1),
-                              normalize=True)
+                # save sample input and reconstruction
+                vutils.save_image(x_test,
+                                  '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))
 
-            vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1))
+                vutils.save_image(test_evals['decode'].detach(),
+                                  '{}/{}_test_recon.png'.format(imagesdir_epoch, args.distribution),
+                                  normalize=True)
 
-            vutils.save_image(batch['decode'].detach(),
-                              '{}/{}_train_recon_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1),
-                              normalize=True)
+                vutils.save_image(x, '{}/{}_train_samples.png'.format(imagesdir_epoch, args.distribution))
 
-            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
-                                       device=device)
-            vutils.save_image(gen_image,
-                              '{}/gen_image_epoch_{}.png'.format(imagesdir_epoch, epoch + 1), normalize=True)
+                vutils.save_image(batch['decode'].detach(),
+                                  '{}/{}_train_recon.png'.format(imagesdir_epoch, args.distribution),
+                                  normalize=True)
+
+                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
+                                           device=device)
+                vutils.save_image(gen_image,
+                                  '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
 
 
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-                     f'In testing loss convergence plot of {args.method}', imagesdir,
+                     f'In testing loss convergence plot of {args.method}', outdir_convergence,
                      'test_loss_convergence.png')
 
     plot_convergence(range(1, len(train_list_loss) + 1), train_list_loss, 'Training loss',
-                     f'In training loss convergence plot of {args.method}', imagesdir,
+                     f'In training loss convergence plot of {args.method}', outdir_convergence,
                      'train_loss_convergence.png')
 
     plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
-                     f'Reconstruction Loss (RL) convergence plot of {args.method}', imagesdir,
+                     f'Reconstruction Loss (RL) convergence plot of {args.method}', outdir_convergence,
                      'rl_convergence.png')
 
     plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
-                     f'Wasserstein Distance (WG) convergence plot of {args.method}', imagesdir,
+                     f'Wasserstein Distance (WG) convergence plot of {args.method}', outdir_convergence,
                      'wg_convergence.png')
 
     plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
-                     f'Wasserstein Distance (LP) convergence plot of {args.method}', imagesdir,
+                     f'Wasserstein Distance (LP) convergence plot of {args.method}', outdir_convergence,
                      'lp_convergence.png')
 
     plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
-                     f'Fairness (F) convergence plot of {args.method}', imagesdir,
+                     f'Fairness (F) convergence plot of {args.method}', outdir_convergence,
                      'f_convergence.png')
 
     plot_convergence(range(1, len(list_AD) + 1), list_AD, 'Averaging Distance (AD)',
-                     f'Averaging Distance (AD) convergence plot of {args.method}', imagesdir,
+                     f'Averaging Distance (AD) convergence plot of {args.method}', outdir_convergence,
                      'ad_convergence.png')
 
     plot_convergence(range(1, len(list_AD_images) + 1), list_AD_images, 'Averaging Distance in Images Space (ADI)',
-                     f'Averaging Distance in Images Space (ADI) convergence plot of {args.method}', imagesdir,
+                     f'Averaging Distance in Images Space (ADI) convergence plot of {args.method}', outdir_convergence,
                      'ad_images_convergence.png')
 
     plot_convergence(range(1, len(list_F_images) + 1), list_F_images, 'Fairness in Images Space (FI)',
-                     f'Fairness in Images Space (FI) convergence plot of {args.method}', imagesdir,
+                     f'Fairness in Images Space (FI) convergence plot of {args.method}', outdir_convergence,
                      'f_images_convergence.png')
 
 
