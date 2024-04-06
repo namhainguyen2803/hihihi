@@ -314,7 +314,8 @@ def main():
                     plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
                     plt.xlim([-1.5, 1.5])
                     plt.ylim([-1.5, 1.5])
-                    plt.title(f'Test Latent Space of {args.method} method, F = {F}, W = {AD}')
+                    title = f'Test Latent Space of {args.method} method, F = {F:.3f}, W = {AD:.3f}'
+                    plt.title(title)
                     plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
                     plt.close()
 
@@ -324,7 +325,8 @@ def main():
 
                     plt.figure(figsize=(10, 10))
                     plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
-                    plt.title('t-SNE Visualization')
+                    title = f'Test Latent Space of {args.method} method, F = {F:.3f}, W = {AD:.3f}'
+                    plt.title(title)
                     plt.xlabel('t-SNE Component 1')
                     plt.ylabel('t-SNE Component 2')
                     plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
