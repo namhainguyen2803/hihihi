@@ -2,6 +2,7 @@ import torch
 from swae.utils import *
 import matplotlib.pyplot as plt
 
+
 def generate_image(model,
                    prior_distribution,
                    num_images=100,
@@ -90,7 +91,13 @@ def compute_fairness_and_averaging_distance_in_images_space(model,
     return compute_fairness(list_ws_distance), compute_averaging_distance(list_ws_distance)
 
 
-def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution, theta=None, theta_latent=None,
+def ultimate_evaluation(args,
+                        model,
+                        evaluator,
+                        test_loader,
+                        prior_distribution,
+                        theta=None,
+                        theta_latent=None,
                         device='cpu'):
     with torch.no_grad():
         model.eval()
@@ -127,7 +134,6 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
 
         # Compute RL
         RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
-        print(f"Reconstruction loss: {RL}")
 
         # Compute WG
         if theta is None:
@@ -142,8 +148,6 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
                                          device=device,
                                          theta=theta)
 
-        print(f"Wasserstein distance between generated and real images (WG): {WG}")
-
         # Compute LP
         prior_samples = prior_distribution(num_images).to(device)
         if theta_latent is None:
@@ -157,8 +161,6 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
                                          p=2,
                                          device=device,
                                          theta=theta_latent)
-
-        print(f"Wasserstein distance between posterior and prior distribution (LP): {LP}")
 
         # Compute F and AD in latent space
         if theta_latent is None:
@@ -175,9 +177,6 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
                                                         dim=tensor_encoded_images.shape[-1],
                                                         theta=theta_latent)
 
-        print(f"Fairness (F): {F}")
-        print(f"Averaging distance (AD): {AD}")
-
         ### Compute F and AD in image spaces
         if theta is None:
             theta = rand_projections(dim=tensor_flatten_real_images.shape[-1],
@@ -193,9 +192,6 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
                                                                                       device=device,
                                                                                       theta=theta)
 
-        print(f"Fairness in images space (FI): {F_images}")
-        print(f"Averaging distance in images space (ADI): {AD_images}")
-
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)
         WG = convert_to_cpu_number(WG)
@@ -206,6 +202,7 @@ def ultimate_evaluation(args, model, evaluator, test_loader, prior_distribution,
 
         return RL, LP, WG, F, AD, F_images, AD_images
 
+
 def convert_to_cpu_number(x):
     if torch.is_tensor(x):
         if x.is_cuda:
@@ -213,6 +210,7 @@ def convert_to_cpu_number(x):
         return x.item()
     else:
         return x
+
 
 def plot_convergence(iterations, data, ylabel, title, imagesdir, filename):
     plt.figure(figsize=(10, 10))

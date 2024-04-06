@@ -1,6 +1,6 @@
 %%bash
 
-methods=(FEFBSW lowerbound_FEFBSW EFBSW lowerbound_EFBSW FBSW lowerboundFBSW BSW None)
+methods=(EFBSW)
 
 for method in "${methods[@]}"
 do
