@@ -80,8 +80,6 @@ def main():
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    dataloader_kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {'num_workers': args.num_workers,
-                                                                                 'pin_memory': False}
     # set random seed
     torch.manual_seed(args.seed)
     if use_cuda:
@@ -288,8 +286,17 @@ def main():
                 list_F_images.append(F_images)
 
         if (epoch + 1) == args.epochs or F + AD < eval_best:
-            eval_best = F + AD
-            torch.save(model.state_dict(), '{}/{}_epoch_{}_{}.pth'.format(chkptdir, args.dataset, epoch + 1, eval_best))
+
+            if (epoch + 1) == args.epochs:
+                imagesdir_epoch = os.path.join(imagesdir, "end")
+                chkptdir_epoch = os.path.join(chkptdir, "end")
+
+            else:
+                imagesdir_epoch = os.path.join(imagesdir, "best")
+                chkptdir_epoch = os.path.join(chkptdir, "best")
+                eval_best = F + AD
+
+            torch.save(model.state_dict(), '{}/{}_epoch_{}.pth'.format(chkptdir_epoch, args.dataset, epoch + 1))
             train_encode, train_targets = torch.cat(train_encode), torch.cat(train_targets)
             test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
             test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
@@ -300,16 +307,14 @@ def main():
                 plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
                 plt.xlim([-1.5, 1.5])
                 plt.ylim([-1.5, 1.5])
-                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir_epoch, epoch + 1))
                 plt.close()
 
                 plt.figure(figsize=(10, 10))
                 plt.scatter(train_encode[:, 0], -train_encode[:, 1], c=(10 * train_targets), cmap=plt.cm.Spectral)
                 plt.xlim([-1.5, 1.5])
                 plt.ylim([-1.5, 1.5])
-                plt.title('Train Latent Space\nLoss: {:.5f}'.format(test_loss))
-                plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.savefig('{}/train_latent_epoch_{}.png'.format(imagesdir_epoch, epoch + 1))
                 plt.close()
 
             else:
@@ -321,30 +326,28 @@ def main():
                 plt.title('t-SNE Visualization')
                 plt.xlabel('t-SNE Component 1')
                 plt.ylabel('t-SNE Component 2')
-                plt.title('Test Latent Space\nLoss: {:.5f}'.format(test_loss))
-                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir, epoch + 1))
+                plt.savefig('{}/test_latent_epoch_{}.png'.format(imagesdir_epoch, epoch + 1))
                 plt.colorbar(label='Target')
                 plt.close()
 
             # save sample input and reconstruction
             vutils.save_image(x_test,
-                              '{}/{}_test_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+                              '{}/{}_test_samples_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1))
 
             vutils.save_image(test_evals['decode'].detach(),
-                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                              '{}/{}_test_recon_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1),
                               normalize=True)
 
-            vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1))
+            vutils.save_image(x, '{}/{}_train_samples_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1))
 
             vutils.save_image(batch['decode'].detach(),
-                              '{}/{}_train_recon_epoch_{}.png'.format(imagesdir, args.distribution, epoch + 1),
+                              '{}/{}_train_recon_epoch_{}.png'.format(imagesdir_epoch, args.distribution, epoch + 1),
                               normalize=True)
 
             gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
                                        device=device)
             vutils.save_image(gen_image,
-                              '{}/gen_image_epoch_{}.png'.format(imagesdir, epoch + 1), normalize=True)
-
+                              '{}/gen_image_epoch_{}.png'.format(imagesdir_epoch, epoch + 1), normalize=True)
 
 
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
