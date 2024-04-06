@@ -70,6 +70,8 @@ def main():
     args = parser.parse_args()
     # create output directory
 
+    args.outdir = os.path.join(args.outdir, f"lr_{args.lr}")
+    args.outdir = os.path.join(args.outdir, f"fsw_{args.weight_fsw}")
     args.outdir = os.path.join(args.outdir, args.method)
 
     outdir_best = os.path.join(args.outdir, "best")
