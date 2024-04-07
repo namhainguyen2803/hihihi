@@ -205,7 +205,7 @@ def main():
         list_AD_images.append(AD_images)
         list_F_images.append(F_images)
 
-    eval_best = F + AD
+    eval_best = 1000
 
     print()
     # train networks for n epochs
