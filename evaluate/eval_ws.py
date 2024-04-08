@@ -49,7 +49,6 @@ def compute_fairness_and_averaging_distance_in_images_space(model,
 
 def ultimate_evaluation(args,
                         model,
-                        evaluator,
                         test_loader,
                         prior_distribution,
                         device='cpu'):
@@ -65,10 +64,10 @@ def ultimate_evaluation(args,
             list_real_images.append(x_test)
             list_labels.append(y_test)
 
-            test_evals = evaluator.forward(x_test)
+            encoded_images, decoded_images = model(x_test.to(device))
 
-            list_encoded_images.append(test_evals["encode"].detach())
-            list_decoded_images.append(test_evals["decode"].detach())
+            list_encoded_images.append(encoded_images.detach())
+            list_decoded_images.append(decoded_images.detach())
 
         tensor_real_images = torch.cat(list_real_images, dim=0).cpu()
         tensor_labels = torch.cat(list_labels, dim=0).cpu()

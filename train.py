@@ -180,7 +180,6 @@ def main():
         if args.dataset == 'mnist':
             RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
                                                                          model=model,
-                                                                         evaluator=trainer,
                                                                          test_loader=test_loader,
                                                                          prior_distribution=distribution_fn,
                                                                          device=device)
@@ -269,7 +268,6 @@ def main():
             if args.dataset == 'mnist':
                 RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
                                                                              model=model,
-                                                                             evaluator=trainer,
                                                                              test_loader=test_loader,
                                                                              prior_distribution=distribution_fn,
                                                                              device=device)
