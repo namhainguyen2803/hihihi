@@ -333,7 +333,7 @@ def main():
                     tsne_result = tsne.fit_transform(test_encode)
 
                     plt.figure(figsize=(10, 10))
-                    plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
+                    plt.scatter(tsne_result[:, 0], -tsne_result[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
                     title = f'Latent Space of {args.method} method'
                     plt.title(title)
                     plt.xlabel('t-SNE Component 1')

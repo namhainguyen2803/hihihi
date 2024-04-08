@@ -1,4 +1,8 @@
+import os
+
 import torch
+
+from fid_evaluator import fid_evaluator_function
 from swae.utils import *
 import matplotlib.pyplot as plt
 
@@ -38,6 +42,11 @@ def compute_fairness_and_averaging_distance(list_features,
             features_cls = list_features[list_labels == cls_id]
             z_samples = prior_distribution(features_cls.shape[0]).to(device)
             wd = compute_true_Wasserstein(X=features_cls, Y=z_samples)
+
+            SAMPLE_PATH = 'generated_images/cifar10_epoch_{}.npz'.format(epoch + 1)
+            fid_evaluation(model=model, prior_distribution=distribution_fn,
+                           fid_stat="/kaggle/input/cifar10/cifar10.npz", sample_path=SAMPLE_PATH, device=device)
+
             dist_swd.append(wd)
     return compute_fairness(dist_swd), compute_averaging_distance(dist_swd)
 
@@ -172,3 +181,16 @@ def plot_convergence(iterations, data, ylabel, title, imagesdir, filename):
     plt.grid(True)
     plt.savefig(f'{imagesdir}/{filename}')
     plt.close()
+
+
+def fid_evaluation(model, prior_distribution, fid_stat, sample_path, device):
+    os.makedirs(sample_path)
+    with torch.no_grad():
+        gen_images = generate_image(model=model, prior_distribution=prior_distribution, num_images=50000, device=device)
+        print(check_range(gen_images))
+        gen_images = (gen_images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
+        np.savez(sample_path, gen_images)
+        fid_evaluator_function(ref_batch=fid_stat, sample_batch=sample_path)
+
+def check_range(tensor):
+    return (tensor >= 0).all() and (tensor <= 1).all()
