@@ -334,6 +334,8 @@ def main():
 
                     plt.figure(figsize=(10, 10))
                     plt.scatter(tsne_result[:, 0], -tsne_result[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
+                    plt.xlim([-1.5, 1.5])
+                    plt.ylim([-1.5, 1.5])
                     title = f'Latent Space of {args.method} method'
                     plt.title(title)
                     plt.xlabel('t-SNE Component 1')
