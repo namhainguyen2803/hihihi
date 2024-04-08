@@ -232,64 +232,65 @@ def main():
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
 
+        with open(output_file, 'a') as f:
+            f.write('evaluating...\n')
+        model.eval()
+
+        with torch.no_grad():
+
+            train_encode, train_targets, train_loss = list(), list(), 0.0
+            test_encode, test_targets, test_loss = list(), list(), 0.0
+
+            for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
+                batch = trainer.test_on_batch(x, y)
+
+                train_encode.append(batch['encode'].detach())
+                train_loss += batch['loss'].item()
+                train_targets.append(y)
+
+            for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
+                test_evals = trainer.test_on_batch(x_test, y_test)
+
+                test_encode.append(test_evals['encode'].detach())
+                test_loss += test_evals['loss'].item()
+                test_targets.append(y_test)
+
+            test_loss /= len(test_loader)
+            train_loss /= len(train_loader)
+            list_loss.append(test_loss)
+            train_list_loss.append(train_loss)
+
         if (epoch + 1) % args.log_epoch_interval == 0 or (epoch + 1) == args.epochs:
 
+            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                         model=model,
+                                                                         evaluator=trainer,
+                                                                         test_loader=test_loader,
+                                                                         prior_distribution=distribution_fn,
+                                                                         device=device)
+
             with open(output_file, 'a') as f:
-                f.write('evaluating...\n')
-            model.eval()
-            with torch.no_grad():
+                f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
+                                                                          float(epoch + 1) / (args.epochs) * 100.,
+                                                                          test_loss))
+                f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
+                f.write("When evaluating test loader:\n")
+                f.write(f" +) Reconstruction loss (RL): {RL}\n")
+                f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
+                f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
+                f.write(f" +) Fairness (F): {F}\n")
+                f.write(f" +) Averaging distance (AD): {AD}\n")
+                f.write(f" +) Fairness in images space (FI): {F_images}\n")
+                f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
+                f.write("\n")
 
-                train_encode, train_targets, train_loss = list(), list(), 0.0
-                test_encode, test_targets, test_loss = list(), list(), 0.0
-
-                for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
-                    batch = trainer.test_on_batch(x, y)
-
-                    train_encode.append(batch['encode'].detach())
-                    train_loss += batch['loss'].item()
-                    train_targets.append(y)
-
-                for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                    test_evals = trainer.test_on_batch(x_test, y_test)
-
-                    test_encode.append(test_evals['encode'].detach())
-                    test_loss += test_evals['loss'].item()
-                    test_targets.append(y_test)
-
-                test_loss /= len(test_loader)
-                train_loss /= len(train_loader)
-                list_loss.append(test_loss)
-                train_list_loss.append(train_loss)
-
-                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                             model=model,
-                                                                             evaluator=trainer,
-                                                                             test_loader=test_loader,
-                                                                             prior_distribution=distribution_fn,
-                                                                             device=device)
-
-                with open(output_file, 'a') as f:
-                    f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
-                                                                              float(epoch + 1) / (args.epochs) * 100.,
-                                                                              test_loss))
-                    f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
-                    f.write("When evaluating test loader:\n")
-                    f.write(f" +) Reconstruction loss (RL): {RL}\n")
-                    f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
-                    f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
-                    f.write(f" +) Fairness (F): {F}\n")
-                    f.write(f" +) Averaging distance (AD): {AD}\n")
-                    f.write(f" +) Fairness in images space (FI): {F_images}\n")
-                    f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
-                    f.write("\n")
-
-                list_RL.append(RL)
-                list_WG.append(WG)
-                list_LP.append(LP)
-                list_F.append(F)
-                list_AD.append(AD)
-                list_AD_images.append(AD_images)
-                list_F_images.append(F_images)
+            list_RL.append(RL)
+            list_WG.append(WG)
+            list_LP.append(LP)
+            list_F.append(F)
+            list_AD.append(AD)
+            list_AD_images.append(AD_images)
+            list_F_images.append(F_images)
 
             # update best or end
             if (epoch + 1) == args.epochs or eval_best > F + AD:
