@@ -21,7 +21,6 @@ class BaseLTDataLoader:
         pass
 
     def create_dataloader(self):
-
         instances_indices = torch.arange(len(self.train_dataset.targets))
         all_classes_indices = list()
         for i in range(self.num_classes):
@@ -37,24 +36,7 @@ class BaseLTDataLoader:
         )
 
         self.train_loader = DataLoader(self.train_dataset, batch_sampler=batch_sampler)
-
-        instances_indices = torch.arange(len(self.test_dataset.targets))
-        all_classes_indices = list()
-        for i in range(self.num_classes):
-            class_index = instances_indices[torch.tensor(self.test_dataset.targets) == i].tolist()
-            all_classes_indices.append(class_index)
-
-        test_batch_sampler = SamplerFactory().get(
-            class_idxs=all_classes_indices,
-            batch_size=self.test_batch_size,
-            n_batches=len(self.test_dataset.targets) // self.test_batch_size,
-            alpha=0,
-            kind='fixed'
-        )
-
-        self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler)
-
-        # self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
+        self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
 
         return self.train_loader, self.test_loader
 
@@ -73,15 +55,14 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                    transform=transforms.Compose([
                                        transforms.ToTensor()
                                    ]))
-        self.train_dataset = train_set
 
-        test_set = IMBALANCEMNIST(self.data_dir + "test/",
-                                  train=False, download=True,
-                                  imb_type='exp', imb_factor=1,
+        test_set = datasets.MNIST(root=self.data_dir + "test/",
+                                  train=True,
+                                  download=True,
                                   transform=transforms.Compose([
                                       transforms.ToTensor()
                                   ]))
-        # test_set = datasets.MNIST(root=self.data_dir + "test/", train=True, download=True, transform=transforms.Compose([transforms.ToTensor()]))
+        self.train_dataset = train_set
         self.test_dataset = test_set
 
 
@@ -102,13 +83,12 @@ class CIFAR10LTDataLoader(BaseLTDataLoader):
                                          transforms.ToTensor(),
                                      ]))
 
-        test_set = IMBALANCECIFAR10(self.data_dir + "test/",
-                                    imb_type='exp', imb_factor=1,
-                                    train=True, download=True,
+        test_set = datasets.CIFAR10(root=self.data_dir + "test/",
+                                    train=True,
+                                    download=True,
                                     transform=transforms.Compose([
                                         transforms.ToTensor()
                                     ]))
-        # test_set = datasets.CIFAR10(root=self.data_dir + "test/", train=True, download=True, transform=transforms.Compose([transforms.ToTensor()]))
 
         self.train_dataset = train_set
         self.test_dataset = test_set
@@ -131,12 +111,11 @@ class CIFAR100LTDataLoader(BaseLTDataLoader):
                                           transforms.ToTensor(),
                                       ]))
 
-        test_set = IMBALANCECIFAR100(self.data_dir + "test/",
-                                     imb_type='exp', imb_factor=1,
-                                     train=False, download=True,
+        test_set = datasets.CIFAR100(root=self.data_dir + "test/",
+                                     train=True,
+                                     download=True,
                                      transform=transforms.Compose([
                                          transforms.ToTensor()
                                      ]))
-
         self.train_dataset = train_set
         self.test_dataset = test_set
