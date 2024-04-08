@@ -49,11 +49,11 @@ def compute_F_AD_images(model,
     return compute_fairness(list_distance), compute_averaging_distance(list_distance)
 
 
-def ultimate_evaluate(args,
-                      model,
-                      test_loader,
-                      prior_distribution,
-                      device):
+def ultimate_evaluate_fid(args,
+                          model,
+                          test_loader,
+                          prior_distribution,
+                          device):
     with torch.no_grad():
         model.eval()
 

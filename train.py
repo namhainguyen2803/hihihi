@@ -1,20 +1,22 @@
 import argparse
-import os
-import logging
 import matplotlib as mpl
+
+mpl.use('Agg')
 from sklearn.manifold import TSNE
 
 from swae.models.cifar10 import CIFAR10Autoencoder
-
-mpl.use('Agg')
-import torch.optim as optim
-import torchvision.utils as vutils
-from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
+from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
+
+from evaluate.eval_ws import *
+from evaluate.eval_fid import *
+
+import torch.optim as optim
+import torchvision.utils as vutils
 from dataloader.dataloader import *
-from eval_ws import *
 from utils import *
+
 
 def main():
     # train args
@@ -175,13 +177,19 @@ def main():
 
     with torch.no_grad():
         model.eval()
-
-        RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                     model=model,
-                                                                     evaluator=trainer,
-                                                                     test_loader=test_loader,
-                                                                     prior_distribution=distribution_fn,
-                                                                     device=device)
+        if args.dataset == 'mnist':
+            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                         model=model,
+                                                                         evaluator=trainer,
+                                                                         test_loader=test_loader,
+                                                                         prior_distribution=distribution_fn,
+                                                                         device=device)
+        else:
+            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
+                                                                           model=model,
+                                                                           test_loader=test_loader,
+                                                                           prior_distribution=distribution_fn,
+                                                                           device=device)
         with open(output_file, 'a') as f:
             f.write("In pre-training, when evaluating test loader:\n")
             f.write(f" +) Reconstruction loss (RL): {RL}\n")
@@ -258,12 +266,19 @@ def main():
 
         if (epoch + 1) % args.log_epoch_interval == 0 or (epoch + 1) == args.epochs:
 
-            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                         model=model,
-                                                                         evaluator=trainer,
-                                                                         test_loader=test_loader,
-                                                                         prior_distribution=distribution_fn,
-                                                                         device=device)
+            if args.dataset == 'mnist':
+                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                             model=model,
+                                                                             evaluator=trainer,
+                                                                             test_loader=test_loader,
+                                                                             prior_distribution=distribution_fn,
+                                                                             device=device)
+            else:
+                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
+                                                                               model=model,
+                                                                               test_loader=test_loader,
+                                                                               prior_distribution=distribution_fn,
+                                                                               device=device)
 
             with open(output_file, 'a') as f:
                 f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
@@ -295,14 +310,15 @@ def main():
                     imagesdir_epoch = os.path.join(outdir_end, "images")
                     chkptdir_epoch = os.path.join(outdir_end, "model")
                     with open(output_file, 'a') as f:
-                        f.write(f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
+                        f.write(
+                            f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
                 else:
                     imagesdir_epoch = os.path.join(outdir_best, "images")
                     chkptdir_epoch = os.path.join(outdir_best, "model")
                     eval_best = F + AD
                     with open(output_file, 'a') as f:
-                        f.write(f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
-
+                        f.write(
+                            f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
 
                 os.makedirs(imagesdir_epoch, exist_ok=True)
                 os.makedirs(chkptdir_epoch, exist_ok=True)
@@ -356,7 +372,6 @@ def main():
                                            device=device)
                 vutils.save_image(gen_image,
                                   '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
-
 
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
                      f'In testing loss convergence plot of {args.method}',
