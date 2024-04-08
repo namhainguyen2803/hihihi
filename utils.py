@@ -50,15 +50,15 @@ def plot_convergence(iterations, data, ylabel, title, filename):
     plt.close()
 
 
-def recreate_folder(folder_path):
-    if os.path.exists(folder_path):
-        shutil.rmtree(folder_path)
-    os.makedirs(folder_path)
-    return folder_path
+# def recreate_folder(folder_path):
+#     if os.path.exists(folder_path):
+#         shutil.rmtree(folder_path)
+#     os.makedirs(folder_path)
+#     return folder_path
 
 
 def create_compression_file(images, sample_path):
-    sample_path = recreate_folder(sample_path)
+    # sample_path = recreate_folder(sample_path)
     if check_range_sigmoid(images):
         images = (images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
         np.savez(sample_path, images)
