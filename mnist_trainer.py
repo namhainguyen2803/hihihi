@@ -299,17 +299,13 @@ def main():
                     imagesdir_epoch = os.path.join(outdir_end, "images")
                     chkptdir_epoch = os.path.join(outdir_end, "model")
                     with open(output_file, 'a') as f:
-                        f.write(
-                        f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, "
-                        f"W_images = {AD_images}\n")
+                        f.write(f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
                 else:
                     imagesdir_epoch = os.path.join(outdir_best, "images")
                     chkptdir_epoch = os.path.join(outdir_best, "model")
                     eval_best = F + AD
                     with open(output_file, 'a') as f:
-                        f.write(
-                        f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, "
-                        f"W_images = {AD_images}\n")
+                        f.write(f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
 
 
                 os.makedirs(imagesdir_epoch, exist_ok=True)
