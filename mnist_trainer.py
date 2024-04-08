@@ -298,11 +298,19 @@ def main():
                 if (epoch + 1) == args.epochs:
                     imagesdir_epoch = os.path.join(outdir_end, "images")
                     chkptdir_epoch = os.path.join(outdir_end, "model")
-
+                    with open(output_file, 'a') as f:
+                        f.write(
+                        f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, "
+                        f"W_images = {AD_images}\n")
                 else:
                     imagesdir_epoch = os.path.join(outdir_best, "images")
                     chkptdir_epoch = os.path.join(outdir_best, "model")
                     eval_best = F + AD
+                    with open(output_file, 'a') as f:
+                        f.write(
+                        f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, "
+                        f"W_images = {AD_images}\n")
+
 
                 os.makedirs(imagesdir_epoch, exist_ok=True)
                 os.makedirs(chkptdir_epoch, exist_ok=True)
@@ -317,7 +325,7 @@ def main():
                     plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
                     plt.xlim([-1.5, 1.5])
                     plt.ylim([-1.5, 1.5])
-                    title = f'Test Latent Space of {args.method} method, F = {F:.3f}, W = {AD:.3f}'
+                    title = f'Latent Space of {args.method} method'
                     plt.title(title)
                     plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
                     plt.close()
@@ -328,7 +336,7 @@ def main():
 
                     plt.figure(figsize=(10, 10))
                     plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c=test_targets, cmap='viridis')
-                    title = f'Test Latent Space of {args.method} method, F = {F:.3f}, W = {AD:.3f}'
+                    title = f'Latent Space of {args.method} method'
                     plt.title(title)
                     plt.xlabel('t-SNE Component 1')
                     plt.ylabel('t-SNE Component 2')
@@ -380,11 +388,11 @@ def main():
                      f'Fairness (F) convergence plot of {args.method}', outdir_convergence,
                      'f_convergence.png')
 
-    plot_convergence(range(1, len(list_AD) + 1), list_AD, 'Averaging Distance (AD)',
+    plot_convergence(range(1, len(list_AD) + 1), list_AD, 'Averaging Distance (W)',
                      f'Averaging Distance (AD) convergence plot of {args.method}', outdir_convergence,
                      'ad_convergence.png')
 
-    plot_convergence(range(1, len(list_AD_images) + 1), list_AD_images, 'Averaging Distance in Images Space (ADI)',
+    plot_convergence(range(1, len(list_AD_images) + 1), list_AD_images, 'Averaging Distance in Images Space (WI)',
                      f'Averaging Distance in Images Space (ADI) convergence plot of {args.method}', outdir_convergence,
                      'ad_images_convergence.png')
 
