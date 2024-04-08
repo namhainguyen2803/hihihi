@@ -3,7 +3,7 @@ machine: cpu
 task:
  train-mnist:
    description: mnist swae train
-   command: pip install -e . && python examples/mnist_trainer.py --distribution ring
+   command: pip install -e . && python examples/trainer.py --distribution ring
  train-lsun:
    description: lsun swae train
    input:

@@ -7,17 +7,14 @@ from sklearn.manifold import TSNE
 from swae.models.cifar10 import CIFAR10Autoencoder
 
 mpl.use('Agg')
-import matplotlib.pyplot as plt
-import torch
 import torch.optim as optim
 import torchvision.utils as vutils
 from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
-from torchvision import datasets, transforms
 from dataloader.dataloader import *
-from swae.utils import *
-from eval_functions import *
+from eval_ws import *
+from utils import *
 
 def main():
     # train args
@@ -94,9 +91,6 @@ def main():
         torch.cuda.manual_seed(args.seed)
 
     output_file = f'{args.outdir}/output.log'
-
-    logging.basicConfig(filename=output_file, level=logging.INFO,
-                        format='%(asctime)s - %(levelname)s - %(message)s')
 
     # log args
     with open(output_file, 'a') as f:
@@ -365,40 +359,33 @@ def main():
 
 
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-                     f'In testing loss convergence plot of {args.method}', outdir_convergence,
-                     'test_loss_convergence.png')
+                     f'In testing loss convergence plot of {args.method}',
+                     f"{outdir_convergence}/test_loss_convergence.png")
 
     plot_convergence(range(1, len(train_list_loss) + 1), train_list_loss, 'Training loss',
-                     f'In training loss convergence plot of {args.method}', outdir_convergence,
-                     'train_loss_convergence.png')
+                     f'In training loss convergence plot of {args.method}',
+                     f"{outdir_convergence}/train_loss_convergence.png")
 
     plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
-                     f'Reconstruction Loss (RL) convergence plot of {args.method}', outdir_convergence,
-                     'rl_convergence.png')
+                     f'Reconstruction Loss (RL) convergence plot of {args.method}',
+                     f"{outdir_convergence}/rl_convergence.png")
 
     plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
-                     f'Wasserstein Distance (WG) convergence plot of {args.method}', outdir_convergence,
-                     'wg_convergence.png')
+                     f'Wasserstein Distance (WG) convergence plot of {args.method}',
+                     f"{outdir_convergence}/wg_convergence.png")
 
     plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
-                     f'Wasserstein Distance (LP) convergence plot of {args.method}', outdir_convergence,
-                     'lp_convergence.png')
+                     f'Wasserstein Distance (LP) convergence plot of {args.method}',
+                     f"{outdir_convergence}/lp_convergence.png")
 
     plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
-                     f'Fairness (F) convergence plot of {args.method}', outdir_convergence,
-                     'f_convergence.png')
+                     f'Fairness (F) convergence plot of {args.method}',
+                     f"{outdir_convergence}/f_convergence.png")
 
-    plot_convergence(range(1, len(list_AD) + 1), list_AD, 'Averaging Distance (W)',
-                     f'Averaging Distance (AD) convergence plot of {args.method}', outdir_convergence,
-                     'ad_convergence.png')
-
-    plot_convergence(range(1, len(list_AD_images) + 1), list_AD_images, 'Averaging Distance in Images Space (WI)',
-                     f'Averaging Distance in Images Space (ADI) convergence plot of {args.method}', outdir_convergence,
-                     'ad_images_convergence.png')
-
-    plot_convergence(range(1, len(list_F_images) + 1), list_F_images, 'Fairness in Images Space (FI)',
-                     f'Fairness in Images Space (FI) convergence plot of {args.method}', outdir_convergence,
-                     'f_images_convergence.png')
+    # Modify the last call to have the desired pattern for output file path
+    plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
+                     f'In testing loss convergence plot of {args.method}',
+                     f"{outdir_convergence}/test_loss_convergence.png")
 
 
 if __name__ == '__main__':

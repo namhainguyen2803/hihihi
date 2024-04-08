@@ -1,6 +1,5 @@
 import torch
-import torch.nn.functional as F
-from swae.utils import *
+from metrics.wasserstein import *
 
 
 class SWAEBatchTrainer:
@@ -10,7 +9,7 @@ class SWAEBatchTrainer:
             autoencoder (torch.nn.Module): module which implements autoencoder framework
             optimizer (torch.optim.Optimizer): torch optimizer
             distribution_fn (callable): callable to draw random samples
-            num_projections (int): number of projections to approximate sliced wasserstein distance
+            num_projections (int): number of projections to approximate sliced metrics distance
             p (int): power of distance metric
             weight (float): weight of divergence metric compared to reconstruction in loss
             device (torch.Device): torch device

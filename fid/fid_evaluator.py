@@ -25,12 +25,6 @@ FID_SPATIAL_NAME = "mixed_6/conv:0"
 
 
 def fid_evaluator_function(ref_batch, sample_batch):
-    class Args:
-        pass
-
-    args = Args()
-    args.ref_batch = ref_batch
-    args.sample_batch = sample_batch
 
     config = tf.ConfigProto(
         allow_soft_placement=True  # allows DecodeJpeg to run on CPU in Inception graph
@@ -44,26 +38,28 @@ def fid_evaluator_function(ref_batch, sample_batch):
     evaluator.warmup()
 
     print("computing reference batch activations...")
-    ref_acts = evaluator.read_activations(args.ref_batch)
+    ref_acts = evaluator.read_activations(ref_batch)
     print("computing/reading reference batch statistics...")
-    ref_stats, ref_stats_spatial = evaluator.read_statistics(args.ref_batch, ref_acts)
+    ref_stats, ref_stats_spatial = evaluator.read_statistics(ref_batch, ref_acts)
 
     print("computing sample batch activations...")
-    sample_acts = evaluator.read_activations(args.sample_batch)
+    sample_acts = evaluator.read_activations(sample_batch)
     print("computing/reading sample batch statistics...")
-    sample_stats, sample_stats_spatial = evaluator.read_statistics(args.sample_batch, sample_acts)
+    sample_stats, sample_stats_spatial = evaluator.read_statistics(sample_batch, sample_acts)
 
     IS = evaluator.compute_inception_score(sample_acts[0])
     FID = sample_stats.frechet_distance(ref_stats)
+    sFID = sample_stats_spatial.frechet_distance(ref_stats_spatial)
+    precision, recall = evaluator.compute_prec_recall(ref_acts[0], sample_acts[0])
+
     print("Computing evaluations...")
     print("Inception Score:", IS)
     print("FID:", FID)
-    print("sFID:", sample_stats_spatial.frechet_distance(ref_stats_spatial))
-    prec, recall = evaluator.compute_prec_recall(ref_acts[0], sample_acts[0])
-    print("Precision:", prec)
+    print("sFID:", sFID)
+    print("Precision:", precision)
     print("Recall:", recall)
 
-    return IS, FID
+    return IS, FID, sFID, precision, recall
 
 
 class InvalidFIDException(Exception):
@@ -653,7 +649,3 @@ def _numpy_partition(arr, kth, **kwargs):
 
     with ThreadPool(num_workers) as pool:
         return list(pool.map(partial(np.partition, kth=kth, **kwargs), batches))
-
-
-if __name__ == "__main__":
-    main()
