@@ -42,6 +42,8 @@ def main():
                         help='method (default: FEFBSW)')
     parser.add_argument('--num-projections', type=int, default=10000, metavar='NP',
                         help='number of projections (default: 500)')
+    parser.add_argument('--embedding-size', type=int, default=48, metavar='ES',
+                        help='embedding latent space (default: 48)')
 
     parser.add_argument('--alpha', type=float, default=0.9, metavar='A',
                         help='RMSprop alpha/rho (default: 0.9)')
