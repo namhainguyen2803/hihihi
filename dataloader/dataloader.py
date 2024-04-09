@@ -54,7 +54,6 @@ class BaseLTDataLoader:
 
         self.test_loader = DataLoader(self.test_dataset, batch_sampler=test_batch_sampler)
 
-        # self.test_loader = DataLoader(self.test_dataset, batch_size=self.test_batch_size, shuffle=False)
 
         return self.train_loader, self.test_loader
 
@@ -81,7 +80,6 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                   transform=transforms.Compose([
                                       transforms.ToTensor()
                                   ]))
-        # test_set = datasets.MNIST(root=self.data_dir + "test/", train=True, download=True, transform=transforms.Compose([transforms.ToTensor()]))
         self.test_dataset = test_set
 
 
@@ -108,8 +106,6 @@ class CIFAR10LTDataLoader(BaseLTDataLoader):
                                     transform=transforms.Compose([
                                         transforms.ToTensor()
                                     ]))
-        # test_set = datasets.CIFAR10(root=self.data_dir + "test/", train=True, download=True, transform=transforms.Compose([transforms.ToTensor()]))
-
         self.train_dataset = train_set
         self.test_dataset = test_set
 

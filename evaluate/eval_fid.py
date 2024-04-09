@@ -1,6 +1,6 @@
 import torch
 
-from eval_ws import compute_F_AD
+from evaluate.eval_ws import compute_F_AD
 from fid.fid_evaluator import fid_evaluator_function
 from utils import *
 
