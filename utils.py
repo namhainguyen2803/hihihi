@@ -10,11 +10,9 @@ def generate_image(model,
                    num_images=100,
                    device='cpu'):
     with torch.no_grad():
-        z_sample = prior_distribution(num_images).to(device)
-        print(f"Hello: {z_sample}")
+        z_sample = prior_distribution(num_images)
         model_device = next(model.parameters()).device
         x_synthesis = model.generate(z_sample.to(model_device)).to(device)
-        print(f"Cac: {x_synthesis}")
         return x_synthesis
 
 

@@ -81,14 +81,9 @@ def ultimate_evaluate_fid(args,
                                                  prior_distribution=prior_distribution,
                                                  num_images=num_images,
                                                  device=device).cpu()
-        # print(tensor_generated_images)
-        print(tensor_real_images.shape, tensor_decoded_images.shape, tensor_generated_images.shape)
-        print(tensor_generated_images)
-        npz_real_images = create_compression_file(tensor_real_images, "statistic/real_images.npz")
-        # npz_generated_images = create_compression_file(tensor_generated_images, "statistic/generated_images.npz")
 
-        rand_tensor = torch.rand(num_images, 3, 32, 32)
-        npz_generated_images = create_compression_file(rand_tensor, "statistic/generated_images.npz")
+        npz_real_images = create_compression_file(tensor_real_images, "statistic/real_images.npz")
+        npz_generated_images = create_compression_file(tensor_generated_images, "statistic/generated_images.npz")
 
         device = 'cpu'
 

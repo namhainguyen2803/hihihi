@@ -2,13 +2,13 @@ import torch
 import torch.nn as nn
 
 
-def weights_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        m.weight.data.normal_(0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
-        m.weight.data.normal_(1.0, 0.02)
-        m.bias.data.fill_(0)
+# def weights_init(m):
+#     classname = m.__class__.__name__
+#     if classname.find('Conv') != -1:
+#         m.weight.data.normal_(0.0, 0.02)
+#     elif classname.find('BatchNorm') != -1:
+#         m.weight.data.normal_(1.0, 0.02)
+        # m.bias.data.fill_(0)
 
 
 class CIFAR10Encoder(nn.Module):
@@ -110,8 +110,8 @@ class CIFAR10Autoencoder(nn.Module):
         self.encoder = CIFAR10Encoder(init_num_filters, lrelu_slope, embedding_dim)
         self.decoder = CIFAR10Decoder(init_num_filters, embedding_dim)
 
-        self.encoder.apply(weights_init)
-        self.decoder.apply(weights_init)
+        # self.encoder.apply(weights_init)
+        # self.decoder.apply(weights_init)
 
     def forward(self, x):
         z = self.encoder(x)
