@@ -83,7 +83,7 @@ def main():
     os.makedirs(outdir_best, exist_ok=True)
     os.makedirs(outdir_end, exist_ok=True)
     os.makedirs(outdir_convergence, exist_ok=True)
-
+    os.makedirs("statistic", exist_ok=True)
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
