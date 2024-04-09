@@ -6,7 +6,7 @@ from dataloader.longtailed import IMBALANCECIFAR10, IMBALANCECIFAR100, IMBALANCE
 
 
 class BaseLTDataLoader:
-    def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250, num_classes=0):
+    def __init__(self, data_dir="data/", train_batch_size=128, test_batch_size=64, num_classes=0):
         self.test_loader = None
         self.train_loader = None
         self.train_dataset = None
@@ -67,7 +67,7 @@ class MNISTLTDataLoader(BaseLTDataLoader):
 
 
 class CIFAR10LTDataLoader(BaseLTDataLoader):
-    def __init__(self, data_dir="data/", train_batch_size=80, test_batch_size=80):
+    def __init__(self, data_dir="data/", train_batch_size=64, test_batch_size=64):
         super(CIFAR10LTDataLoader, self).__init__(data_dir=data_dir,
                                                   train_batch_size=train_batch_size,
                                                   test_batch_size=test_batch_size,
