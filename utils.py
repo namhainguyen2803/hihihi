@@ -60,8 +60,8 @@ def plot_convergence(iterations, data, ylabel, title, filename):
 def create_compression_file(images, sample_path):
     # sample_path = recreate_folder(sample_path)
     if check_range_sigmoid(images):
-        images = images.permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
-        # images = (images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
+        # images = images.permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
+        images = (images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
         np.savez(sample_path, images)
         return sample_path
     else:
