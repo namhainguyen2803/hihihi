@@ -64,7 +64,7 @@ def ultimate_evaluation(args,
             list_real_images.append(x_test)
             list_labels.append(y_test)
 
-            encoded_images, decoded_images = model(x_test.to(device))
+            decoded_images, encoded_images = model(x_test.to(device))
 
             list_encoded_images.append(encoded_images.detach())
             list_decoded_images.append(decoded_images.detach())
