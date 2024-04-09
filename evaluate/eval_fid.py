@@ -12,7 +12,7 @@ def compute_WG(generated_images, real_images):
 
 
 def compute_LP(encoded_samples, prior_samples):
-    LP = compute_true_Wasserstein(X=encoded_samples, Y=prior_samples)
+    LP = compute_true_Wasserstein(X=encoded_samples[:10000], Y=prior_samples[:10000])
     return LP
 
 
