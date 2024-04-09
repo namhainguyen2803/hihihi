@@ -94,7 +94,7 @@ def ultimate_evaluate_fid(args,
         WG = compute_WG(npz_generated_images, npz_real_images)
         print(f"WG: {WG}")
         # Compute LP
-        prior_samples = prior_distribution(num_images).to(device)
+        prior_samples = prior_distribution(num_images)
         print(tensor_encoded_images.shape, prior_samples.shape)
         LP = compute_LP(tensor_encoded_images, prior_samples)
         print(f"LP: {LP}")
