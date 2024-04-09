@@ -95,6 +95,7 @@ def ultimate_evaluate_fid(args,
         print(f"WG: {WG}")
         # Compute LP
         prior_samples = prior_distribution(num_images).to(device)
+        print(tensor_encoded_images.shape, prior_samples.shape)
         LP = compute_LP(tensor_encoded_images, prior_samples)
         print(f"LP: {LP}")
         # Compute F and AD in latent space
