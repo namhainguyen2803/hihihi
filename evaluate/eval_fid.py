@@ -3,6 +3,7 @@ import torch
 from evaluate.eval_ws import compute_F_AD
 from fid.fid_evaluator import fid_evaluator_function
 from utils import *
+from metrics.wasserstein import *
 
 
 def compute_WG(generated_images, real_images):
