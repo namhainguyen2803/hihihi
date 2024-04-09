@@ -89,21 +89,21 @@ def ultimate_evaluate_fid(args,
 
         # Compute RL
         RL = compute_RL(tensor_decoded_images, tensor_real_images)
-
+        print(f"RL: {RL}")
         # Compute WG
         WG = compute_WG(npz_generated_images, npz_real_images)
-
+        print(f"WG: {WG}")
         # Compute LP
         prior_samples = prior_distribution(num_images).to(device)
         LP = compute_LP(tensor_encoded_images, prior_samples)
-
+        print(f"LP: {LP}")
         # Compute F and AD in latent space
         F, AD = compute_F_AD(list_features=tensor_encoded_images,
                              list_labels=tensor_labels,
                              prior_distribution=prior_distribution,
                              num_classes=args.num_classes,
                              device=device)
-
+        print(f"F: {F}, AD: {AD}")
         # Compute F and AD in image space
         F_images, AD_images = compute_F_AD_images(model=model,
                                                   prior_distribution=prior_distribution,
@@ -111,7 +111,7 @@ def ultimate_evaluate_fid(args,
                                                   tensor_labels=tensor_labels,
                                                   num_classes=args.num_classes,
                                                   device=device)
-
+        print(f"FI: {F_images}, ADI: {AD_images}")
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)
         WG = convert_to_cpu_number(WG)
