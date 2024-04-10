@@ -309,12 +309,12 @@ def main():
             list_AD_images.append(AD_images)
             list_F_images.append(F_images)
 
-            if store_end:
+            if args.store_end:
                 crit_1 = (epoch + 1) == args.epochs
             else:
                 crit_1 = False
 
-            if store_best:
+            if args.store_best:
                 crit_2 = eval_best > F + AD
             else:
                 crit_2 = False
