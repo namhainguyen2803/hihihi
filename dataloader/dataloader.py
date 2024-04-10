@@ -57,7 +57,7 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                    ]))
 
         test_set = datasets.MNIST(root=self.data_dir + "test/",
-                                  train=True,
+                                  train=False,
                                   download=True,
                                   transform=transforms.Compose([
                                       transforms.ToTensor()
@@ -84,7 +84,7 @@ class CIFAR10LTDataLoader(BaseLTDataLoader):
                                      ]))
 
         test_set = datasets.CIFAR10(root=self.data_dir + "test/",
-                                    train=True,
+                                    train=False,
                                     download=True,
                                     transform=transforms.Compose([
                                         transforms.ToTensor()
@@ -112,7 +112,7 @@ class CIFAR100LTDataLoader(BaseLTDataLoader):
                                       ]))
 
         test_set = datasets.CIFAR100(root=self.data_dir + "test/",
-                                     train=True,
+                                     train=False,
                                      download=True,
                                      transform=transforms.Compose([
                                          transforms.ToTensor()
