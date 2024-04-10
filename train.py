@@ -248,15 +248,12 @@ def main():
 
         with torch.no_grad():
 
-            train_encode, train_targets, train_loss = list(), list(), 0.0
+            train_loss = 0.0
             test_encode, test_targets, test_loss = list(), list(), 0.0
 
             for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
                 batch = trainer.eval_on_batch(x, y)
-
-                train_encode.append(batch['encode'].detach())
                 train_loss += batch['loss'].item()
-                train_targets.append(y)
 
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
                 test_evals = trainer.test_on_batch(x_test)
@@ -340,6 +337,8 @@ def main():
                 os.makedirs(chkptdir_epoch, exist_ok=True)
 
                 torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
+
+
                 test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
                 test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
 
