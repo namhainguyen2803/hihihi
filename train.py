@@ -68,6 +68,11 @@ def main():
                         help='number of batches to log training status (default: 10)')
     parser.add_argument('--log-epoch-interval', type=int, default=2, metavar='N',
                         help='number of epochs to save training artifacts (default: 1)')
+
+    parser.add_argument('--store-end', type=bool, default=True, metavar='SE',
+                        help='store model at the end of training')
+    parser.add_argument('--store-best', type=bool, default=True, metavar='SB',
+                        help='store best model so far')
     args = parser.parse_args()
     # create output directory
 
@@ -302,8 +307,18 @@ def main():
             list_AD_images.append(AD_images)
             list_F_images.append(F_images)
 
+            if store_end:
+                crit_1 = (epoch + 1) == args.epochs
+            else:
+                crit_1 = False
+
+            if store_best:
+                crit_2 = eval_best > F + AD
+            else:
+                crit_2 = False
+
             # update best or end
-            if (epoch + 1) == args.epochs or eval_best > F + AD:
+            if crit_1 or crit_2:
 
                 if (epoch + 1) == args.epochs:
                     imagesdir_epoch = os.path.join(outdir_end, "images")
