@@ -272,6 +272,7 @@ def main():
                                                                              prior_distribution=distribution_fn,
                                                                              device=device)
             else:
+                print(f"CACAC: {epoch + 1}")
                 RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
                                                                                model=model,
                                                                                test_loader=test_loader,
