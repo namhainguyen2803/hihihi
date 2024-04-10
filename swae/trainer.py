@@ -42,12 +42,30 @@ class SWAEBatchTrainer:
         self.optimizer.step()
         return evals
 
-    def test_on_batch(self, x, y):
-        # reset gradients
-        self.optimizer.zero_grad()
-        # autoencoder forward pass and loss
-        evals = self.eval_on_batch(x, y)
-        return evals
+    def test_on_batch(self, x):
+        with torch.no_grad():
+            # reset gradients
+            self.optimizer.zero_grad()
+            # autoencoder forward pass and loss
+            recon_x, z_posterior = self.model_(x)
+            bce = F.binary_cross_entropy(recon_x, x)
+            batch_size = x.size(0)
+            z_prior = self._distribution_fn(batch_size).to(self._device)
+
+            swd = sliced_wasserstein_distance(encoded_samples=z_posterior, distribution_samples=z_prior,
+                                              num_projections=self.num_projections_, p=self.p_,
+                                              device=self._device)
+            l1 = F.l1_loss(recon_x, x)
+
+            loss = bce + float(self.weight) * swd + l1
+            return {
+                'loss': loss,
+                'bce': bce,
+                'w2': swd,
+                'encode': z_posterior,
+                'decode': recon_x,
+                'l1': l1
+            }
 
     def eval_on_batch(self, x, y):
 
@@ -69,8 +87,6 @@ class SWAEBatchTrainer:
         list_z_posterior = list()
         for cls in range(self.num_classes):
             list_z_posterior.append(z_posterior[y == cls])
-
-        fsw = 0
 
         if self.method == "FEFBSW":
             fsw = FEFBSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)

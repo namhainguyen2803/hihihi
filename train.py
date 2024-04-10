@@ -252,14 +252,14 @@ def main():
             test_encode, test_targets, test_loss = list(), list(), 0.0
 
             for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
-                batch = trainer.test_on_batch(x, y)
+                batch = trainer.eval_on_batch(x, y)
 
                 train_encode.append(batch['encode'].detach())
                 train_loss += batch['loss'].item()
                 train_targets.append(y)
 
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                test_evals = trainer.test_on_batch(x_test, y_test)
+                test_evals = trainer.test_on_batch(x_test)
 
                 test_encode.append(test_evals['encode'].detach())
                 test_loss += test_evals['loss'].item()
