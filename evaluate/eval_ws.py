@@ -79,7 +79,7 @@ def ultimate_evaluation(args,
                                                  device=device).cpu()
 
         num_images = tensor_real_images.shape[0]
-        print(f"number of testing images: {num_images}")
+
         tensor_flatten_real_images = tensor_real_images.view(num_images, -1)
         tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
 
