@@ -25,8 +25,10 @@ def main():
     parser.add_argument('--num-classes', type=int, default=10, help='number of classes')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
-    parser.add_argument('--batch-size', type=int, default=500, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=500, metavar='BS',
                         help='input batch size for training (default: 500)')
+    parser.add_argument('--batch-size-test', type=int, default=500, metavar='BST',
+                        help='input batch size for evaluating (default: 500)')
 
     parser.add_argument('--epochs', type=int, default=200, metavar='N',
                         help='number of epochs to train (default: 30)')
@@ -97,7 +99,7 @@ def main():
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
 
-    output_file = f'{args.outdir}/output.log'
+    output_file = f'{args.outdir}/output_{args.method}.log'
 
     # log args
     with open(output_file, 'a') as f:
@@ -117,9 +119,9 @@ def main():
 
     # build train and test set data loaders
     if args.dataset == 'mnist':
-        data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+        data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
     elif args.dataset == 'cifar10':
-        data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size)
+        data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
     else:
         data_loader = None
     train_loader, test_loader = data_loader.create_dataloader()
