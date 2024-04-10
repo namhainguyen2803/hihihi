@@ -84,7 +84,7 @@ class CIFAR10LTDataLoader(BaseLTDataLoader):
                                      ]))
 
         test_set = datasets.CIFAR10(root=self.data_dir + "test/",
-                                    train=False,
+                                    train=True,
                                     download=True,
                                     transform=transforms.Compose([
                                         transforms.ToTensor()

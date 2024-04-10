@@ -39,6 +39,7 @@ def compute_F_AD_images(model,
     for cls_id, list_real_images in each_class_images.items():
         real_images = torch.cat(list_real_images, dim=0).cpu()
         num_images = len(real_images)
+        print(f"In class {cls_id}, number of images: {num_images}")
         generated_images = generate_image(model=model,
                                           prior_distribution=prior_distribution,
                                           num_images=num_images,
