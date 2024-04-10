@@ -47,6 +47,7 @@ class SWAEBatchTrainer:
             # reset gradients
             self.optimizer.zero_grad()
             # autoencoder forward pass and loss
+            x = x.to(self._device)
             recon_x, z_posterior = self.model_(x)
             bce = F.binary_cross_entropy(recon_x, x)
             batch_size = x.size(0)
