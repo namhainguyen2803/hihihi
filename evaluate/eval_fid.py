@@ -85,7 +85,7 @@ def ultimate_evaluate_fid(args,
 
         npz_real_images = create_compression_file(tensor_real_images, "statistic/real_images.npz")
         npz_generated_images = create_compression_file(tensor_generated_images, "statistic/generated_images.npz")
-
+        print(tensor_generated_images)
         device = 'cpu'
 
         # Compute RL
