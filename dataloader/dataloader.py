@@ -1,4 +1,4 @@
-from pytorch_balanced_sampler import *
+from BalancedSampler import *
 from torchvision import datasets, transforms
 import torch
 from torch.utils.data import DataLoader
@@ -49,18 +49,19 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                                 num_classes=10)
 
     def create_dataset(self):
-        train_set = IMBALANCEMNIST(self.data_dir + "train/",
-                                   train=True, download=True,
-                                   imb_type='exp', imb_factor=0.05,
+        train_set = datasets.MNIST(root=self.data_dir + "train/",
+                                   train=True,
+                                   download=True,
                                    transform=transforms.Compose([
-                                       transforms.ToTensor()
+                                       transforms.ToTensor(),
+                                       # transforms.Normalize((0.5,), (0.5,))
                                    ]))
 
         test_set = datasets.MNIST(root=self.data_dir + "test/",
                                   train=False,
                                   download=True,
                                   transform=transforms.Compose([
-                                      transforms.ToTensor()
+                                      transforms.ToTensor(),
                                   ]))
         self.train_dataset = train_set
         self.test_dataset = test_set
