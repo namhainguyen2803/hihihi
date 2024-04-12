@@ -10,7 +10,6 @@ from swae.trainer import SWAEBatchTrainer
 from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
 
 from evaluate.eval_ws import *
-from evaluate.eval_fid import *
 
 import torch.optim as optim
 import torchvision.utils as vutils
@@ -190,12 +189,7 @@ def main():
                                                                          test_loader=test_loader,
                                                                          prior_distribution=distribution_fn,
                                                                          device=device)
-        else:
-            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
-                                                                           model=model,
-                                                                           test_loader=test_loader,
-                                                                           prior_distribution=distribution_fn,
-                                                                           device=device)
+
         with open(output_file, 'a') as f:
             f.write("In pre-training, when evaluating test loader:\n")
             f.write(f" +) Reconstruction loss (RL): {RL}\n")
@@ -275,13 +269,6 @@ def main():
                                                                              test_loader=test_loader,
                                                                              prior_distribution=distribution_fn,
                                                                              device=device)
-            else:
-                print(f"CACAC: {epoch + 1}")
-                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
-                                                                               model=model,
-                                                                               test_loader=test_loader,
-                                                                               prior_distribution=distribution_fn,
-                                                                               device=device)
 
             with open(output_file, 'a') as f:
                 f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
