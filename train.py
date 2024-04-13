@@ -85,11 +85,13 @@ def main():
     outdir_best = os.path.join(args.outdir, "best")
     outdir_end = os.path.join(args.outdir, "end")
     outdir_convergence = os.path.join(args.outdir, "convergence")
+    outdir_latent = os.path.join(args.outdir, "latent")
 
     os.makedirs(args.datadir, exist_ok=True)
     os.makedirs(outdir_best, exist_ok=True)
     os.makedirs(outdir_end, exist_ok=True)
     os.makedirs(outdir_convergence, exist_ok=True)
+    os.makedirs(outdir_latent, exist_ok=True)
     os.makedirs("statistic", exist_ok=True)
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -338,57 +340,54 @@ def main():
                 torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
 
 
-                test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-                test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-                print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
-                if args.dataset == "mnist":
-                    # plot
-                    plt.figure(figsize=(10, 10))
-                    # plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-                    # plt.xlim([-1.5, 1.5])
-                    # plt.ylim([-1.5, 1.5])
-                    # title = f'Latent Space of {args.method} method'
-                    # plt.title(title)
-                    # plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
-                    # plt.close()
+            test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
+            print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
 
-                    classes = np.unique(test_targets)
-                    colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
-                    for i, class_label in enumerate(classes):
-                        plt.scatter(test_encode[test_targets == class_label, 0],
-                                    test_encode[test_targets == class_label, 1],
-                                    c=[colors[i]],
-                                    label=class_label,
-                                    alpha=0.7,
-                                    s=20)
-                    plt.legend()
-                    title = f'Latent Space of {args.method} method'
-                    plt.title(title)
-                    plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
-                    plt.close()
 
-                else:
-                    tsne = TSNE(n_components=2, random_state=42)
-                    tsne_result = tsne.fit_transform(test_encode)
+            if args.dataset == "mnist":
+                # plot
 
-                    classes = np.unique(test_targets)
-                    colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+                plt.figure(figsize=(10, 10))
 
-                    # Plot t-SNE
-                    plt.figure(figsize=(10, 10))
-                    for i, class_label in enumerate(classes):
-                        plt.scatter(tsne_result[test_targets == class_label, 0],
-                                    tsne_result[test_targets == class_label, 1],
-                                    c=[colors[i]],
-                                    label=class_label,
-                                    alpha=0.7,
-                                    s=20)
-                    plt.legend()
-                    title = f'Latent Space of {args.method} method'
-                    plt.title(title)
-                    plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
-                    plt.colorbar(label='Target')
-                    plt.close()
+                classes = np.unique(test_targets)
+                colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+                for i, class_label in enumerate(classes):
+                    plt.scatter(test_encode[test_targets == class_label, 0],
+                                -test_encode[test_targets == class_label, 1],
+                                c=[colors[i]],
+                                label=class_label,
+                                alpha=0.7,
+                                s=20)
+                plt.legend()
+                title = f'Latent Space of {args.method} method'
+                plt.title(title)
+                plt.colorbar(label='Target')
+                plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
+                plt.close()
+
+            else:
+                tsne = TSNE(n_components=2, random_state=42)
+                tsne_result = tsne.fit_transform(test_encode)
+
+                classes = np.unique(test_targets)
+                colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+
+                # Plot t-SNE
+                plt.figure(figsize=(10, 10))
+                for i, class_label in enumerate(classes):
+                    plt.scatter(tsne_result[test_targets == class_label, 0],
+                                -tsne_result[test_targets == class_label, 1],
+                                c=[colors[i]],
+                                label=class_label,
+                                alpha=0.7,
+                                s=20)
+                plt.legend()
+                title = f'Latent Space of {args.method} method'
+                plt.title(title)
+                plt.colorbar(label='Target')
+                plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
+                plt.close()
 
                 # save sample input and reconstruction
                 vutils.save_image(x_test,
