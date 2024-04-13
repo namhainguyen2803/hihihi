@@ -103,7 +103,7 @@ class CIFAR100LTDataLoader(BaseLTDataLoader):
 
     def create_dataset(self):
         train_set = IMBALANCECIFAR100(root=self.data_dir + "train/",
-                                      imb_type='exp', imb_factor=0.05,
+                                      imb_type='exp', imb_factor=1.0,
                                       train=True, download=True,
                                       transform=transforms.Compose([
                                           transforms.RandomCrop(32, padding=4),
