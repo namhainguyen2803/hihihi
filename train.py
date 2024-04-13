@@ -356,14 +356,22 @@ def main():
                     tsne = TSNE(n_components=2, random_state=42)
                     tsne_result = tsne.fit_transform(test_encode)
 
-                    plt.figure(figsize=(10, 10))
-                    plt.scatter(tsne_result[:, 0], -tsne_result[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-                    plt.xlim([-1.5, 1.5])
-                    plt.ylim([-1.5, 1.5])
+                    classes = np.unique(test_targets)
+                    colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+
+                    # Plot t-SNE
+                    plt.figure(figsize=(10, 8))
+                    for i, class_label in enumerate(classes):
+                        plt.scatter(tsne_result[test_targets == class_label, 0],
+                                    tsne_result[test_targets == class_label, 1],
+                                    c=[colors[i]],
+                                    label=class_label)
+                    plt.title('t-SNE plot of encoded test data')
+                    plt.xlabel('t-SNE component 1')
+                    plt.ylabel('t-SNE component 2')
+                    plt.legend()
                     title = f'Latent Space of {args.method} method'
                     plt.title(title)
-                    plt.xlabel('t-SNE Component 1')
-                    plt.ylabel('t-SNE Component 2')
                     plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
                     plt.colorbar(label='Target')
                     plt.close()
