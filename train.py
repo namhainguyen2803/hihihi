@@ -276,7 +276,6 @@ def main():
                                                                              prior_distribution=distribution_fn,
                                                                              device=device)
             else:
-                print(f"CACAC: {epoch + 1}")
                 RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
                                                                                model=model,
                                                                                test_loader=test_loader,
@@ -383,7 +382,7 @@ def main():
                                   '{}/{}_train_recon.png'.format(imagesdir_epoch, args.distribution),
                                   normalize=True)
 
-                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
+                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=500,
                                            device=device)
                 vutils.save_image(gen_image,
                                   '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)

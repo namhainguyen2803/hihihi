@@ -43,7 +43,6 @@ def compute_F_AD_images(model,
                                           prior_distribution=prior_distribution,
                                           num_images=num_images,
                                           device=device)
-        print(generated_images)
         npz_cls_images = create_compression_file(real_images, f"statistic/real_images.npz")
         npz_gen_images = create_compression_file(generated_images, f"statistic/generated_images.npz")
         IS, FID, sFID, precision, recall = fid_evaluator_function(npz_gen_images, npz_cls_images)
@@ -86,7 +85,6 @@ def ultimate_evaluate_fid(args,
 
         npz_real_images = create_compression_file(tensor_real_images, "statistic/real_images.npz")
         npz_generated_images = create_compression_file(tensor_generated_images, "statistic/generated_images.npz")
-        print(tensor_generated_images)
         device = 'cpu'
 
         # Compute RL
