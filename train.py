@@ -344,9 +344,24 @@ def main():
                 if args.dataset == "mnist":
                     # plot
                     plt.figure(figsize=(10, 10))
-                    plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
-                    plt.xlim([-1.5, 1.5])
-                    plt.ylim([-1.5, 1.5])
+                    # plt.scatter(test_encode[:, 0], -test_encode[:, 1], c=(10 * test_targets), cmap=plt.cm.Spectral)
+                    # plt.xlim([-1.5, 1.5])
+                    # plt.ylim([-1.5, 1.5])
+                    # title = f'Latent Space of {args.method} method'
+                    # plt.title(title)
+                    # plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
+                    # plt.close()
+
+                    classes = np.unique(test_targets)
+                    colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+                    for i, class_label in enumerate(classes):
+                        plt.scatter(test_encode[test_targets == class_label, 0],
+                                    test_encode[test_targets == class_label, 1],
+                                    c=[colors[i]],
+                                    label=class_label,
+                                    alpha=0.7,
+                                    s=20)
+                    plt.legend()
                     title = f'Latent Space of {args.method} method'
                     plt.title(title)
                     plt.savefig('{}/test_latent.png'.format(imagesdir_epoch))
@@ -360,15 +375,14 @@ def main():
                     colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
 
                     # Plot t-SNE
-                    plt.figure(figsize=(10, 8))
+                    plt.figure(figsize=(10, 10))
                     for i, class_label in enumerate(classes):
                         plt.scatter(tsne_result[test_targets == class_label, 0],
                                     tsne_result[test_targets == class_label, 1],
                                     c=[colors[i]],
-                                    label=class_label)
-                    plt.title('t-SNE plot of encoded test data')
-                    plt.xlabel('t-SNE component 1')
-                    plt.ylabel('t-SNE component 2')
+                                    label=class_label,
+                                    alpha=0.7,
+                                    s=20)
                     plt.legend()
                     title = f'Latent Space of {args.method} method'
                     plt.title(title)
