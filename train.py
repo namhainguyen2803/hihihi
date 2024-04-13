@@ -341,7 +341,7 @@ def main():
 
                 test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
                 test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-
+                print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
                 if args.dataset == "mnist":
                     # plot
                     plt.figure(figsize=(10, 10))
