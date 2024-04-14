@@ -357,9 +357,8 @@ def main():
 
                 # Plot each class separately
                 for i, class_label in enumerate(classes):
-                    class_indices = test_targets == class_label
-                    plt.scatter(test_encode[class_indices, 0],
-                                -test_encode[class_indices, 1],
+                    plt.scatter(test_encode[test_targets == class_label, 0],
+                                -test_encode[test_targets == class_label, 1],
                                 c=[colors[i]],
                                 cmap=plt.cm.Spectral,
                                 label=class_label,
@@ -376,7 +375,7 @@ def main():
                 tsne_result = tsne.fit_transform(test_encode)
 
                 classes = np.unique(test_targets)
-                colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+                colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
 
                 # Plot t-SNE
                 plt.figure(figsize=(10, 10))
@@ -384,9 +383,10 @@ def main():
                     plt.scatter(tsne_result[test_targets == class_label, 0],
                                 -tsne_result[test_targets == class_label, 1],
                                 c=[colors[i]],
-                                label=class_label)
-                                # alpha=0.7,
-                                # s=20)
+                                cmap=plt.cm.Spectral,
+                                label=class_label,
+                                alpha=0.7,
+                                s=20)
                 plt.legend()
                 title = f'Latent Space of {args.method} method'
                 plt.title(title)
