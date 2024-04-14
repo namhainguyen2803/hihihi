@@ -356,13 +356,12 @@ def main():
                     plt.scatter(test_encode[test_targets == class_label, 0],
                                 -test_encode[test_targets == class_label, 1],
                                 c=[colors[i]],
-                                label=class_label,
-                                alpha=0.7,
-                                s=20)
+                                label=class_label)
+                                # alpha=0.7,
+                                # s=20)
                 plt.legend()
                 title = f'Latent Space of {args.method} method'
                 plt.title(title)
-                plt.colorbar(label='Target')
                 plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
                 plt.close()
 
@@ -379,13 +378,12 @@ def main():
                     plt.scatter(tsne_result[test_targets == class_label, 0],
                                 -tsne_result[test_targets == class_label, 1],
                                 c=[colors[i]],
-                                label=class_label,
-                                alpha=0.7,
-                                s=20)
+                                label=class_label)
+                                # alpha=0.7,
+                                # s=20)
                 plt.legend()
                 title = f'Latent Space of {args.method} method'
                 plt.title(title)
-                plt.colorbar(label='Target')
                 plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
                 plt.close()
 
