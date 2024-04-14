@@ -355,11 +355,11 @@ def main():
                 for i, class_label in enumerate(classes):
                     plt.scatter(test_encode[test_targets == class_label, 0],
                                 -test_encode[test_targets == class_label, 1],
-                                c=[colors[i] * 10],
+                                c=[colors[i]],
                                 cmap=plt.cm.Spectral,
-                                label=class_label)
-                                # alpha=0.7,
-                                # s=20)
+                                label=class_label,
+                                alpha=0.7,
+                                s=20)
                 plt.legend()
                 title = f'Latent Space of {args.method} method'
                 plt.title(title)
