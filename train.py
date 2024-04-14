@@ -360,7 +360,7 @@ def main():
                     class_indices = test_targets == class_label
                     plt.scatter(test_encode[class_indices, 0],
                                 -test_encode[class_indices, 1],
-                                c=[class_label],
+                                c=[colors[i]],
                                 cmap=plt.cm.Spectral,
                                 label=class_label,
                                 alpha=0.7,
