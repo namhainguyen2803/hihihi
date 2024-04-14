@@ -348,13 +348,18 @@ def main():
             if args.dataset == "mnist":
                 # plot
 
+
+
                 plt.figure(figsize=(10, 10))
 
                 classes = np.unique(test_targets)
-                colors = plt.cm.tab10(np.linspace(0, len(classes), len(classes)))
+                colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
+
+                # Plot each class separately
                 for i, class_label in enumerate(classes):
-                    plt.scatter(test_encode[test_targets == class_label, 0],
-                                -test_encode[test_targets == class_label, 1],
+                    class_indices = test_targets == class_label
+                    plt.scatter(test_encode[class_indices, 0],
+                                -test_encode[class_indices, 1],
                                 c=[colors[i]],
                                 cmap=plt.cm.Spectral,
                                 label=class_label,
