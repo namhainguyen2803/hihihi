@@ -351,11 +351,12 @@ def main():
                 plt.figure(figsize=(10, 10))
 
                 classes = np.unique(test_targets)
-                colors = plt.cm.tab10(np.linspace(0, 1, len(classes)))
+                colors = plt.cm.tab10(np.linspace(0, len(classes), len(classes)))
                 for i, class_label in enumerate(classes):
                     plt.scatter(test_encode[test_targets == class_label, 0],
                                 -test_encode[test_targets == class_label, 1],
-                                c=[colors[i]],
+                                c=[colors[i] * 10],
+                                cmap=plt.cm.Spectral,
                                 label=class_label)
                                 # alpha=0.7,
                                 # s=20)
