@@ -339,17 +339,31 @@ def main():
 
                 torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
 
+                vutils.save_image(x_test,
+                                  '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))
+
+                vutils.save_image(test_evals['decode'].detach(),
+                                  '{}/{}_test_recon.png'.format(imagesdir_epoch, args.distribution),
+                                  normalize=True)
+
+                vutils.save_image(x, '{}/{}_train_samples.png'.format(imagesdir_epoch, args.distribution))
+
+                vutils.save_image(batch['decode'].detach(),
+                                  '{}/{}_train_recon.png'.format(imagesdir_epoch, args.distribution),
+                                  normalize=True)
+
+                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=500,
+                                           device=device)
+                vutils.save_image(gen_image,
+                                  '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
+
 
             test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
             test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
             print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
 
-
             if args.dataset == "mnist":
                 # plot
-
-
-
                 plt.figure(figsize=(10, 10))
 
                 classes = np.unique(test_targets)
@@ -393,24 +407,6 @@ def main():
                 plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
                 plt.close()
 
-                # save sample input and reconstruction
-                vutils.save_image(x_test,
-                                  '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))
-
-                vutils.save_image(test_evals['decode'].detach(),
-                                  '{}/{}_test_recon.png'.format(imagesdir_epoch, args.distribution),
-                                  normalize=True)
-
-                vutils.save_image(x, '{}/{}_train_samples.png'.format(imagesdir_epoch, args.distribution))
-
-                vutils.save_image(batch['decode'].detach(),
-                                  '{}/{}_train_recon.png'.format(imagesdir_epoch, args.distribution),
-                                  normalize=True)
-
-                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=500,
-                                           device=device)
-                vutils.save_image(gen_image,
-                                  '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
 
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
                      f'In testing loss convergence plot of {args.method}',
