@@ -1,3 +1,6 @@
+from tensorflow.python.ops.numpy_ops import np_config
+np_config.enable_numpy_behavior()
+
 import argparse
 import matplotlib as mpl
 
@@ -31,7 +34,7 @@ def main():
                         help='input batch size for evaluating (default: 500)')
 
     parser.add_argument('--epochs', type=int, default=200, metavar='N',
-                        help='number of epochs to train (default: 30)')
+                        help='number of epochs to train (default: 200)')
     parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                         help='learning rate (default: 0.0001)')
 
@@ -244,198 +247,185 @@ def main():
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
 
-        with open(output_file, 'a') as f:
-            f.write('evaluating...\n')
-        model.eval()
-
         with torch.no_grad():
 
-            train_loss = 0.0
-            test_encode, test_targets, test_loss = list(), list(), 0.0
-
-            for test_batch_idx, (x, y) in enumerate(train_loader, start=0):
-                batch = trainer.eval_on_batch(x, y)
-                train_loss += batch['loss'].item()
-
-            for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                test_evals = trainer.test_on_batch(x_test)
-
-                test_encode.append(test_evals['encode'].detach())
-                test_loss += test_evals['loss'].item()
-                test_targets.append(y_test)
-
-            test_loss /= len(test_loader)
-            train_loss /= len(train_loader)
-            list_loss.append(test_loss)
-            train_list_loss.append(train_loss)
-
-        if (epoch + 1) % args.log_epoch_interval == 0 or (epoch + 1) == args.epochs:
-
-            if args.dataset == 'mnist':
-                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                             model=model,
-                                                                             test_loader=test_loader,
-                                                                             prior_distribution=distribution_fn,
-                                                                             device=device)
-            else:
-                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
-                                                                               model=model,
-                                                                               test_loader=test_loader,
-                                                                               prior_distribution=distribution_fn,
-                                                                               device=device)
-
             with open(output_file, 'a') as f:
-                f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
-                                                                          float(epoch + 1) / (args.epochs) * 100.,
-                                                                          test_loss))
-                f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
-                f.write("When evaluating test loader:\n")
-                f.write(f" +) Reconstruction loss (RL): {RL}\n")
-                f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
-                f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
-                f.write(f" +) Fairness (F): {F}\n")
-                f.write(f" +) Averaging distance (AD): {AD}\n")
-                f.write(f" +) Fairness in images space (FI): {F_images}\n")
-                f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
-                f.write("\n")
+                f.write('evaluating...\n')
+            model.eval()
 
-            list_RL.append(RL)
-            list_WG.append(WG)
-            list_LP.append(LP)
-            list_F.append(F)
-            list_AD.append(AD)
-            list_AD_images.append(AD_images)
-            list_F_images.append(F_images)
+            if (epoch + 1) % args.log_epoch_interval == 0 or (epoch + 1) == args.epochs:
 
+                test_encode, test_targets, test_loss = list(), list(), 0.0
 
-            test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-            print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
+                for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
+                    test_evals = trainer.test_on_batch(x_test)
 
-            if args.dataset == "mnist":
-                # plot
-                plt.figure(figsize=(10, 10))
+                    test_encode.append(test_evals['encode'].detach())
+                    test_loss += test_evals['loss'].item()
+                    test_targets.append(y_test)
 
-                classes = np.unique(test_targets)
-                colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
+                test_loss /= len(test_loader)
+                list_loss.append(test_loss)
 
-                # Plot each class separately
-                for i, class_label in enumerate(classes):
-                    plt.scatter(test_encode[test_targets == class_label, 0],
-                                -test_encode[test_targets == class_label, 1],
-                                c=[colors[i]],
-                                cmap=plt.cm.Spectral,
-                                label=class_label,
-                                alpha=0.7,
-                                s=20)
-                plt.legend()
-                title = f'Latent Space of {args.method} method'
-                plt.title(title)
-                plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
-                plt.close()
-
-            else:
-                tsne = TSNE(n_components=2, random_state=42)
-                tsne_result = tsne.fit_transform(test_encode)
-
-                classes = np.unique(test_targets)
-                colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
-
-                # Plot t-SNE
-                plt.figure(figsize=(10, 10))
-                for i, class_label in enumerate(classes):
-                    plt.scatter(tsne_result[test_targets == class_label, 0],
-                                -tsne_result[test_targets == class_label, 1],
-                                c=[colors[i]],
-                                cmap=plt.cm.Spectral,
-                                label=class_label,
-                                alpha=0.7,
-                                s=20)
-                plt.legend()
-                title = f'Latent Space of {args.method} method'
-                plt.title(title)
-                plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
-                plt.close()
-
-
-            if args.store_end:
-                crit_1 = (epoch + 1) == args.epochs
-            else:
-                crit_1 = False
-
-            if args.store_best:
-                crit_2 = eval_best > F + AD
-            else:
-                crit_2 = False
-
-            # update best or end
-            if crit_1 or crit_2:
-
-                if (epoch + 1) == args.epochs:
-                    imagesdir_epoch = os.path.join(outdir_end, "images")
-                    chkptdir_epoch = os.path.join(outdir_end, "model")
-                    with open(output_file, 'a') as f:
-                        f.write(
-                            f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
+                if args.dataset == 'mnist':
+                    RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                                 model=model,
+                                                                                 test_loader=test_loader,
+                                                                                 prior_distribution=distribution_fn,
+                                                                                 device=device)
                 else:
-                    imagesdir_epoch = os.path.join(outdir_best, "images")
-                    chkptdir_epoch = os.path.join(outdir_best, "model")
-                    eval_best = F + AD
-                    with open(output_file, 'a') as f:
-                        f.write(
-                            f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
+                    RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
+                                                                                   model=model,
+                                                                                   test_loader=test_loader,
+                                                                                   prior_distribution=distribution_fn,
+                                                                                   device=device)
 
-                os.makedirs(imagesdir_epoch, exist_ok=True)
-                os.makedirs(chkptdir_epoch, exist_ok=True)
+                with open(output_file, 'a') as f:
+                    f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
+                                                                              float(epoch + 1) / (args.epochs) * 100.,
+                                                                              test_loss))
+                    f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
+                    f.write("When evaluating test loader:\n")
+                    f.write(f" +) Reconstruction loss (RL): {RL}\n")
+                    f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
+                    f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
+                    f.write(f" +) Fairness (F): {F}\n")
+                    f.write(f" +) Averaging distance (AD): {AD}\n")
+                    f.write(f" +) Fairness in images space (FI): {F_images}\n")
+                    f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
+                    f.write("\n")
 
-                torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
+                list_RL.append(RL)
+                list_WG.append(WG)
+                list_LP.append(LP)
+                list_F.append(F)
+                list_AD.append(AD)
+                list_AD_images.append(AD_images)
+                list_F_images.append(F_images)
 
-                vutils.save_image(x_test,
-                                  '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))
+                test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
+                test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
+                print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
 
-                vutils.save_image(test_evals['decode'].detach(),
-                                  '{}/{}_test_recon.png'.format(imagesdir_epoch, args.distribution),
-                                  normalize=True)
+                if args.dataset == "mnist":
+                    # plot
+                    plt.figure(figsize=(10, 10))
 
-                vutils.save_image(x, '{}/{}_train_samples.png'.format(imagesdir_epoch, args.distribution))
+                    classes = np.unique(test_targets)
+                    colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
 
-                vutils.save_image(batch['decode'].detach(),
-                                  '{}/{}_train_recon.png'.format(imagesdir_epoch, args.distribution),
-                                  normalize=True)
+                    # Plot each class separately
+                    for i, class_label in enumerate(classes):
+                        plt.scatter(test_encode[test_targets == class_label, 0],
+                                    -test_encode[test_targets == class_label, 1],
+                                    c=[colors[i]],
+                                    cmap=plt.cm.Spectral,
+                                    label=class_label,
+                                    alpha=0.7,
+                                    s=20)
+                    plt.legend()
+                    title = f'Latent Space of {args.method} method'
+                    plt.title(title)
+                    plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
+                    plt.close()
 
-                gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=500,
-                                           device=device)
-                vutils.save_image(gen_image,
-                                  '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
+                else:
+                    tsne = TSNE(n_components=2, random_state=42)
+                    tsne_result = tsne.fit_transform(test_encode)
 
-    plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-                     f'In testing loss convergence plot of {args.method}',
-                     f"{outdir_convergence}/test_loss_convergence.png")
+                    classes = np.unique(test_targets)
+                    colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
 
-    plot_convergence(range(1, len(train_list_loss) + 1), train_list_loss, 'Training loss',
-                     f'In training loss convergence plot of {args.method}',
-                     f"{outdir_convergence}/train_loss_convergence.png")
+                    # Plot t-SNE
+                    plt.figure(figsize=(10, 10))
+                    for i, class_label in enumerate(classes):
+                        plt.scatter(tsne_result[test_targets == class_label, 0],
+                                    -tsne_result[test_targets == class_label, 1],
+                                    c=[colors[i]],
+                                    cmap=plt.cm.Spectral,
+                                    label=class_label,
+                                    alpha=0.7,
+                                    s=20)
+                    plt.legend()
+                    title = f'Latent Space of {args.method} method'
+                    plt.title(title)
+                    plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
+                    plt.close()
 
-    plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
-                     f'Reconstruction Loss (RL) convergence plot of {args.method}',
-                     f"{outdir_convergence}/rl_convergence.png")
+                if args.store_end:
+                    crit_1 = (epoch + 1) == args.epochs
+                else:
+                    crit_1 = False
 
-    plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
-                     f'Wasserstein Distance (WG) convergence plot of {args.method}',
-                     f"{outdir_convergence}/wg_convergence.png")
+                if args.store_best:
+                    crit_2 = eval_best > F + AD
+                else:
+                    crit_2 = False
 
-    plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
-                     f'Wasserstein Distance (LP) convergence plot of {args.method}',
-                     f"{outdir_convergence}/lp_convergence.png")
+                # update best or end
+                if crit_1 or crit_2:
 
-    plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
-                     f'Fairness (F) convergence plot of {args.method}',
-                     f"{outdir_convergence}/f_convergence.png")
+                    if (epoch + 1) == args.epochs:
+                        imagesdir_epoch = os.path.join(outdir_end, "images")
+                        chkptdir_epoch = os.path.join(outdir_end, "model")
+                        with open(output_file, 'a') as f:
+                            f.write(
+                                f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
+                    else:
+                        imagesdir_epoch = os.path.join(outdir_best, "images")
+                        chkptdir_epoch = os.path.join(outdir_best, "model")
+                        eval_best = F + AD
+                        with open(output_file, 'a') as f:
+                            f.write(
+                                f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
 
-    # Modify the last call to have the desired pattern for output file path
-    plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-                     f'In testing loss convergence plot of {args.method}',
-                     f"{outdir_convergence}/test_loss_convergence.png")
+                    os.makedirs(imagesdir_epoch, exist_ok=True)
+                    os.makedirs(chkptdir_epoch, exist_ok=True)
+
+                    torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
+
+                    vutils.save_image(x_test[:100],
+                                      '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))
+
+                    vutils.save_image(test_evals['decode'][:100].detach(),
+                                      '{}/{}_test_recon.png'.format(imagesdir_epoch, args.distribution),
+                                      normalize=True)
+
+                    vutils.save_image(x[:100], '{}/{}_train_samples.png'.format(imagesdir_epoch, args.distribution))
+
+                    vutils.save_image(batch['decode'][:100].detach(),
+                                      '{}/{}_train_recon.png'.format(imagesdir_epoch, args.distribution),
+                                      normalize=True)
+
+                    gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
+                                               device=device)
+                    vutils.save_image(gen_image,
+                                      '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
+
+        plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
+                         f'In testing loss convergence plot of {args.method}',
+                         f"{outdir_convergence}/test_loss_convergence.png")
+
+        plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
+                         f'Reconstruction Loss (RL) convergence plot of {args.method}',
+                         f"{outdir_convergence}/rl_convergence.png")
+
+        plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
+                         f'Wasserstein Distance (WG) convergence plot of {args.method}',
+                         f"{outdir_convergence}/wg_convergence.png")
+
+        plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
+                         f'Wasserstein Distance (LP) convergence plot of {args.method}',
+                         f"{outdir_convergence}/lp_convergence.png")
+
+        plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
+                         f'Fairness (F) convergence plot of {args.method}',
+                         f"{outdir_convergence}/f_convergence.png")
+
+        # Modify the last call to have the desired pattern for output file path
+        plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
+                         f'In testing loss convergence plot of {args.method}',
+                         f"{outdir_convergence}/test_loss_convergence.png")
 
 
 if __name__ == '__main__':
