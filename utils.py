@@ -57,8 +57,6 @@ def create_compression_file(images, sample_path):
         # images = images.permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
         images = (images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
         np.savez(sample_path, images)
-
-
         return sample_path
     else:
         raise ValueError('images must be in range [0, 1]')
@@ -66,24 +64,31 @@ def create_compression_file(images, sample_path):
 
 def make_jpg_images(tensor, output_folder):
     os.makedirs(output_folder, exist_ok=True)
-    # Iterate through each element of the tensor
+    # If the folder exists, get the highest image index
+    existing_images = [f for f in os.listdir(output_folder) if f.endswith('.jpg')]
+    if existing_images:
+        last_image_index = max([int(f.split('_')[-1].split('.')[0]) for f in existing_images])
+    else:
+        last_image_index = -1
+
+    # Convert the tensor elements to PIL Images and save them
     for i in range(len(tensor)):
-        # Convert the tensor element to a PIL Image
         image_array = np.uint8(tensor[i].to("cpu").numpy() * 255)  # Rescale pixel values to [0, 255]
         image = Image.fromarray(np.transpose(image_array, (1, 2, 0)))  # Convert to PIL Image
         # Save the image to the output folder with a unique filename
-        image_path = os.path.join(output_folder, f'image_{i}.jpg')
+        image_path = os.path.join(output_folder, f'image_{last_image_index + i + 1}.jpg')
         image.save(image_path)
+
     return output_folder
 
 
-def zip_images(images, zip_filename):
+def zip_images(directory, zip_filename):
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for i, image_data in enumerate(images):
-            # Assuming image_data is a tuple containing (image_bytes, filename)
-            image_bytes, filename = image_data
-            zipf.writestr(filename, image_bytes)
-    return zip_filename
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if file.endswith('.jpg'):
+                    file_path = os.path.join(root, file)
+                    zipf.write(file_path, os.path.relpath(file_path, directory))
 
 
 def check_range_sigmoid(tensor):

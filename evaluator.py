@@ -3,7 +3,7 @@ import matplotlib as mpl
 
 mpl.use('Agg')
 from sklearn.manifold import TSNE
-
+import torch
 from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
@@ -25,6 +25,8 @@ def main():
     parser.add_argument('--num-classes', type=int, default=10, help='number of classes')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
+    parser.add_argument('--images-path', default='/images/', help='path to images')
+
     parser.add_argument('--batch-size', type=int, default=500, metavar='BS',
                         help='input batch size for training (default: 500)')
     parser.add_argument('--batch-size-test', type=int, default=500, metavar='BST',
@@ -33,13 +35,8 @@ def main():
     parser.add_argument('--pretrained-model', type=str, metavar='S',
                         help='pretrained model path')
 
-    parser.add_argument('--epochs', type=int, default=200, metavar='N',
-                        help='number of epochs to train (default: 30)')
-    parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
-                        help='learning rate (default: 0.0005)')
-
-    parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
-                        help='method (default: FEFBSW)')
+    parser.add_argument('--method', type=str, default='EFBSW', metavar='MED',
+                        help='method (default: EFBSW)')
     parser.add_argument('--num-projections', type=int, default=10000, metavar='NP',
                         help='number of projections (default: 500)')
     parser.add_argument('--embedding-size', type=int, default=48, metavar='ES',
@@ -60,6 +57,14 @@ def main():
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
+    os.makedirs(args.images_path, exist_ok=True)
+    args.images_path = os.path.join(args.images_path, args.dataset)
+    gen_dir = os.path.join(args.images_path, args.method)
+    os.makedirs(gen_dir, exist_ok=True)
+    args.gen_dir = gen_dir
+
+    print(f"gen_dir: {args.gen_dir}")
+
     if args.dataset == 'mnist':
         data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
     elif args.dataset == 'cifar10':
@@ -78,7 +83,7 @@ def main():
         model = None
     print(model)
 
-    model.load_state_dict(args.pretrained_model)
+    model.load_state_dict(torch.load(args.pretrained_model))
 
     # determine latent distribution
     if args.dataset == 'mnist':
@@ -99,7 +104,7 @@ def main():
     with torch.no_grad():
         RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
                                                                        model=model,
-                                                                       test_loader=train_loader,
+                                                                       test_loader=test_loader,
                                                                        prior_distribution=distribution_fn,
                                                                        device=device)
 
@@ -114,3 +119,6 @@ def main():
             f.write(f" +) Fairness in images space (FI): {F_images}\n")
             f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
             f.write("\n")
+
+if __name__ == "__main__":
+    main()

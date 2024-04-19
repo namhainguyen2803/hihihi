@@ -71,11 +71,6 @@ def ultimate_evaluate_fid(args,
         generated_images_path = make_jpg_images(tensor=tensor_generated_images,
                                                 output_folder=f"{args.gen_dir}/generated_images")
         real_images_path = make_jpg_images(tensor=tensor_real_images, output_folder=f"{args.images_path}/ground_truth")
-        list_images_paths.append(generated_images_path)
-        list_images_paths.append(real_images_path)
-
-        for image_path in list_images_paths:
-            zip_images(images=image_path, zip_filename=image_path)
 
         device = 'cpu'
 
@@ -102,8 +97,7 @@ def ultimate_evaluate_fid(args,
         print(f"F: {F}, AD: {AD}")
 
         # Compute F and AD in image space
-        assert len(list_images_paths[:-2]) == args.num_classes
-        F_images, AD_images = compute_F_AD_images(args, generated_images_path, list_images_paths[:-2])
+        F_images, AD_images = compute_F_AD_images(args, generated_images_path, list_images_paths)
         print(f"FI: {F_images}, ADI: {AD_images}")
 
         RL = convert_to_cpu_number(RL)
