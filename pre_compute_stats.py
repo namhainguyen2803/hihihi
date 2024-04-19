@@ -26,7 +26,7 @@ def compute_statistics(args, device):
     tensor_real_images = torch.cat(list_real_images, dim=0).cpu()
     real_images_path = make_jpg_images(tensor=tensor_real_images, output_folder=f"{args.images_path}/ground_truth")
 
-    dataset_path = os.path.join(args.stat_dir, args.dataseet)
+    dataset_path = os.path.join(args.stat_dir, args.dataset)
     os.makedirs(dataset_path, exist_ok=True)
 
     for i in range(args.num_classes):
@@ -69,5 +69,9 @@ if __name__ == '__main__':
 
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
+
+    torch.manual_seed(args.seed)
+    if use_cuda:
+        torch.cuda.manual_seed(args.seed)
 
     compute_statistics(args=args, device=device)
