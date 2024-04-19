@@ -1,8 +1,9 @@
-import shutil
-
 from metrics.wasserstein import *
 import matplotlib.pyplot as plt
 import os
+import numpy as np
+from PIL import Image
+import zipfile
 
 
 def generate_image(model,
@@ -50,22 +51,39 @@ def plot_convergence(iterations, data, ylabel, title, filename):
     plt.close()
 
 
-# def recreate_folder(folder_path):
-#     if os.path.exists(folder_path):
-#         shutil.rmtree(folder_path)
-#     os.makedirs(folder_path)
-#     return folder_path
-
-
 def create_compression_file(images, sample_path):
     # sample_path = recreate_folder(sample_path)
     if check_range_sigmoid(images):
         # images = images.permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
         images = (images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
         np.savez(sample_path, images)
+
+
         return sample_path
     else:
         raise ValueError('images must be in range [0, 1]')
+
+
+def make_jpg_images(tensor, output_folder):
+    os.makedirs(output_folder, exist_ok=True)
+    # Iterate through each element of the tensor
+    for i in range(len(tensor)):
+        # Convert the tensor element to a PIL Image
+        image_array = np.uint8(tensor[i].to("cpu").numpy() * 255)  # Rescale pixel values to [0, 255]
+        image = Image.fromarray(np.transpose(image_array, (1, 2, 0)))  # Convert to PIL Image
+        # Save the image to the output folder with a unique filename
+        image_path = os.path.join(output_folder, f'image_{i}.ipg')
+        image.save(image_path)
+    return output_folder
+
+
+def zip_images(images, zip_filename):
+    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for i, image_data in enumerate(images):
+            # Assuming image_data is a tuple containing (image_bytes, filename)
+            image_bytes, filename = image_data
+            zipf.writestr(filename, image_bytes)
+    return zip_filename
 
 
 def check_range_sigmoid(tensor):

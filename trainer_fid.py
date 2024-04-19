@@ -1,3 +1,6 @@
+# from tensorflow.python.ops.numpy_ops import np_config
+# np_config.enable_numpy_behavior()
+
 import argparse
 import matplotlib as mpl
 
@@ -21,7 +24,7 @@ from utils import *
 def main():
     # train args
     parser = argparse.ArgumentParser(description='Sliced Wasserstein Autoencoder PyTorch')
-    parser.add_argument('--dataset', default='mnist', help='dataset name')
+    parser.add_argument('--dataset', default='cifar10', help='dataset name')
     parser.add_argument('--num-classes', type=int, default=10, help='number of classes')
     parser.add_argument('--datadir', default='/input/', help='path to dataset')
     parser.add_argument('--outdir', default='/output/', help='directory to output images and model checkpoints')
@@ -75,6 +78,8 @@ def main():
                         help='store model at the end of training')
     parser.add_argument('--store-best', type=bool, default=True, metavar='SB',
                         help='store best model so far')
+
+    parser.add_argument('--images-path', default='/real_images/', help='directory to images')
     args = parser.parse_args()
     # create output directory
 
@@ -83,21 +88,26 @@ def main():
     args.outdir = os.path.join(args.outdir, f"fsw_{args.weight_fsw}")
     args.outdir = os.path.join(args.outdir, args.method)
 
+    args.datadir = os.path.join(args.datadir, args.dataset)
+
     outdir_best = os.path.join(args.outdir, "best")
     outdir_end = os.path.join(args.outdir, "end")
     outdir_convergence = os.path.join(args.outdir, "convergence")
     outdir_latent = os.path.join(args.outdir, "latent")
 
     os.makedirs(args.datadir, exist_ok=True)
+
     os.makedirs(outdir_best, exist_ok=True)
     os.makedirs(outdir_end, exist_ok=True)
     os.makedirs(outdir_convergence, exist_ok=True)
     os.makedirs(outdir_latent, exist_ok=True)
 
-    stat_dir = os.path.join("statistic", f"lr_{args.lr}")
-    stat_dir = os.path.join(stat_dir, f"fsw_{args.weight_fsw}")
-    stat_dir = os.path.join(stat_dir, args.method)
-    os.makedirs(stat_dir, exist_ok=True)
+    args.images_path = os.path.join(args.images_path, args.dataset)
+    gen_dir = os.path.join(args.images_path, f"lr_{args.lr}")
+    gen_dir = os.path.join(gen_dir, f"fsw_{args.weight_fsw}")
+    gen_dir = os.path.join(gen_dir, args.method)
+    os.makedirs(gen_dir, exist_ok=True)
+    args.gen_dir = gen_dir
 
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -129,7 +139,8 @@ def main():
     if args.dataset == 'mnist':
         data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
     elif args.dataset == 'cifar10':
-        data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
+        data_loader = CIFAR10LTDataLoader(data_dir=args.datadir, train_batch_size=args.batch_size,
+                                          test_batch_size=args.batch_size_test)
     else:
         data_loader = None
     train_loader, test_loader = data_loader.create_dataloader()
@@ -181,52 +192,7 @@ def main():
                                weight_fsw=args.weight_fsw,
                                device=device,
                                method=args.method)
-
-    list_RL = list()
-    list_LP = list()
-    list_WG = list()
-    list_F = list()
-    list_AD = list()
-    list_F_images = list()
-    list_AD_images = list()
-
     list_loss = list()
-
-    with torch.no_grad():
-        model.eval()
-        if args.dataset == 'mnist':
-            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                         model=model,
-                                                                         test_loader=test_loader,
-                                                                         prior_distribution=distribution_fn,
-                                                                         device=device)
-        else:
-            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
-                                                                           model=model,
-                                                                           test_loader=test_loader,
-                                                                           prior_distribution=distribution_fn,
-                                                                           stat_dir=stat_dir,
-                                                                           device=device)
-        with open(output_file, 'a') as f:
-            f.write("In pre-training, when evaluating test loader:\n")
-            f.write(f" +) Reconstruction loss (RL): {RL}\n")
-            f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
-            f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
-            f.write(f" +) Fairness (F): {F}\n")
-            f.write(f" +) Averaging distance (AD): {AD}\n")
-            f.write(f" +) Fairness in images space (FI): {F_images}\n")
-            f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
-            f.write("\n")
-
-        list_RL.append(RL)
-        list_WG.append(WG)
-        list_LP.append(LP)
-        list_F.append(F)
-        list_AD.append(AD)
-        list_AD_images.append(AD_images)
-        list_F_images.append(F_images)
-
-    eval_best = 1000
 
     print()
     # train networks for n epochs
@@ -272,43 +238,6 @@ def main():
 
                 test_loss /= len(test_loader)
                 list_loss.append(test_loss)
-
-                if args.dataset == 'mnist':
-                    RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                                 model=model,
-                                                                                 test_loader=test_loader,
-                                                                                 prior_distribution=distribution_fn,
-                                                                                 device=device)
-                else:
-                    RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
-                                                                                   model=model,
-                                                                                   test_loader=test_loader,
-                                                                                   prior_distribution=distribution_fn,
-                                                                                   stat_dir=stat_dir,
-                                                                                   device=device)
-
-                with open(output_file, 'a') as f:
-                    f.write('Test Epoch: {} ({:.2f}%)\tLoss: {:.6f}\n'.format(epoch + 1,
-                                                                              float(epoch + 1) / (args.epochs) * 100.,
-                                                                              test_loss))
-                    f.write('{{"metric": "loss", "value": {}}}\n'.format(test_loss))
-                    f.write("When evaluating test loader:\n")
-                    f.write(f" +) Reconstruction loss (RL): {RL}\n")
-                    f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
-                    f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
-                    f.write(f" +) Fairness (F): {F}\n")
-                    f.write(f" +) Averaging distance (AD): {AD}\n")
-                    f.write(f" +) Fairness in images space (FI): {F_images}\n")
-                    f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
-                    f.write("\n")
-
-                list_RL.append(RL)
-                list_WG.append(WG)
-                list_LP.append(LP)
-                list_F.append(F)
-                list_AD.append(AD)
-                list_AD_images.append(AD_images)
-                list_F_images.append(F_images)
 
                 test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
                 test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
@@ -359,37 +288,15 @@ def main():
                     plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
                     plt.close()
 
-                if args.store_end:
-                    crit_1 = (epoch + 1) == args.epochs
-                else:
-                    crit_1 = False
-
-                if args.store_best:
-                    crit_2 = eval_best > F + AD
-                else:
-                    crit_2 = False
-
-                # update best or end
-                if crit_1 or crit_2:
+                if (epoch + 1) == args.epochs:
 
                     if (epoch + 1) == args.epochs:
                         imagesdir_epoch = os.path.join(outdir_end, "images")
                         chkptdir_epoch = os.path.join(outdir_end, "model")
-                        with open(output_file, 'a') as f:
-                            f.write(
-                                f"Saving end model in final epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
-                    else:
-                        imagesdir_epoch = os.path.join(outdir_best, "images")
-                        chkptdir_epoch = os.path.join(outdir_best, "model")
-                        eval_best = F + AD
-                        with open(output_file, 'a') as f:
-                            f.write(
-                                f"Saving best model in epoch {epoch}, the result: F = {F}, W = {AD}, F_images = {F_images}, W_images = {AD_images}\n")
+                        os.makedirs(imagesdir_epoch, exist_ok=True)
+                        os.makedirs(chkptdir_epoch, exist_ok=True)
 
-                    os.makedirs(imagesdir_epoch, exist_ok=True)
-                    os.makedirs(chkptdir_epoch, exist_ok=True)
-
-                    torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
+                    torch.save(model.state_dict(), '{}/{}_{}.pth'.format(chkptdir_epoch, args.dataset, args.method))
 
                     vutils.save_image(x_test,
                                       '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))
@@ -409,25 +316,22 @@ def main():
                     vutils.save_image(gen_image,
                                       '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
 
-    plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-                     f'In testing loss convergence plot of {args.method}',
-                     f"{outdir_convergence}/test_loss_convergence.png")
+    RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
+                                                                   model=model,
+                                                                   test_loader=train_loader,
+                                                                   prior_distribution=distribution_fn,
+                                                                   device=device)
 
-    plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
-                     f'Reconstruction Loss (RL) convergence plot of {args.method}',
-                     f"{outdir_convergence}/rl_convergence.png")
-
-    plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
-                     f'Wasserstein Distance (WG) convergence plot of {args.method}',
-                     f"{outdir_convergence}/wg_convergence.png")
-
-    plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
-                     f'Wasserstein Distance (LP) convergence plot of {args.method}',
-                     f"{outdir_convergence}/lp_convergence.png")
-
-    plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
-                     f'Fairness (F) convergence plot of {args.method}',
-                     f"{outdir_convergence}/f_convergence.png")
+    with open(output_file, 'a') as f:
+        f.write("In testing, when evaluating in train loader:\n")
+        f.write(f" +) Reconstruction loss (RL): {RL}\n")
+        f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
+        f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
+        f.write(f" +) Fairness (F): {F}\n")
+        f.write(f" +) Averaging distance (AD): {AD}\n")
+        f.write(f" +) Fairness in images space (FI): {F_images}\n")
+        f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
+        f.write("\n")
 
     # Modify the last call to have the desired pattern for output file path
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
