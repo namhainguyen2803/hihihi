@@ -20,35 +20,6 @@ def compute_RL(decoded_images, real_images):
     return RL
 
 
-# def compute_F_AD_images(model,
-#                         prior_distribution,
-#                         tensor_real_images,
-#                         tensor_labels,
-#                         num_classes,
-#                         stat_dir,
-#                         device):
-#     each_class_images = dict()
-#     for cls_id in range(num_classes):
-#         if cls_id in each_class_images:
-#             each_class_images[cls_id].append(tensor_real_images[tensor_labels == cls_id])
-#         else:
-#             each_class_images[cls_id] = list()
-#             each_class_images[cls_id].append(tensor_real_images[tensor_labels == cls_id])
-#
-#     list_distance = list()
-#     for cls_id, list_real_images in each_class_images.items():
-#         real_images = torch.cat(list_real_images, dim=0).cpu()
-#         num_images = len(real_images)
-#         generated_images = generate_image(model=model,
-#                                           prior_distribution=prior_distribution,
-#                                           num_images=num_images,
-#                                           device=device)
-#         npz_cls_images = create_compression_file(real_images, f"{stat_dir}/real_images.npz")
-#         npz_gen_images = create_compression_file(generated_images, f"{stat_dir}/generated_images.npz")
-#         IS, FID, sFID, precision, recall = fid_evaluator_function(npz_gen_images, npz_cls_images)
-#         list_distance.append(FID)
-#     return compute_fairness(list_distance), compute_averaging_distance(list_distance)
-
 def compute_F_AD_images(args, gen_path, list_gen_paths):
     list_distance = list()
     for gen_path in list_gen_paths:
@@ -107,17 +78,21 @@ def ultimate_evaluate_fid(args,
             zip_images(images=image_path, zip_filename=image_path)
 
         device = 'cpu'
+
         # Compute RL
         RL = compute_RL(tensor_decoded_images, tensor_real_images)
         print(f"RL: {RL}")
+
         # Compute WG
         WG = compute_WG(generated_images_path, real_images_path)
         print(f"WG: {WG}")
+
         # Compute LP
         prior_samples = prior_distribution(num_images)
         print(tensor_encoded_images.shape, prior_samples.shape)
         LP = compute_LP(tensor_encoded_images, prior_samples)
         print(f"LP: {LP}")
+
         # Compute F and AD in latent space
         F, AD = compute_F_AD(list_features=tensor_encoded_images,
                              list_labels=tensor_labels,
@@ -125,17 +100,12 @@ def ultimate_evaluate_fid(args,
                              num_classes=args.num_classes,
                              device=device)
         print(f"F: {F}, AD: {AD}")
+
         # Compute F and AD in image space
-        # F_images, AD_images = compute_F_AD_images(model=model,
-        #                                           prior_distribution=prior_distribution,
-        #                                           tensor_real_images=tensor_real_images,
-        #                                           tensor_labels=tensor_labels,
-        #                                           num_classes=args.num_classes,
-        #                                           stat_dir=image_path,
-        #                                           device=device)
         assert len(list_images_paths[:-2]) == args.num_classes
         F_images, AD_images = compute_F_AD_images(args, generated_images_path, list_images_paths[:-2])
         print(f"FI: {F_images}, ADI: {AD_images}")
+
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)
         WG = convert_to_cpu_number(WG)

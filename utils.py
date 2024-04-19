@@ -72,7 +72,7 @@ def make_jpg_images(tensor, output_folder):
         image_array = np.uint8(tensor[i].to("cpu").numpy() * 255)  # Rescale pixel values to [0, 255]
         image = Image.fromarray(np.transpose(image_array, (1, 2, 0)))  # Convert to PIL Image
         # Save the image to the output folder with a unique filename
-        image_path = os.path.join(output_folder, f'image_{i}.ipg')
+        image_path = os.path.join(output_folder, f'image_{i}.jpg')
         image.save(image_path)
     return output_folder
 
