@@ -49,14 +49,14 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                                 num_classes=10)
 
     def create_dataset(self):
-        train_set = IMBALANCEMNIST(self.data_dir + "train/",
+        train_set = IMBALANCEMNIST(self.data_dir,
                                    train=True, download=True,
                                    imb_type='exp', imb_factor=1.0,
                                    transform=transforms.Compose([
                                        transforms.ToTensor()
                                    ]))
 
-        test_set = datasets.MNIST(root=self.data_dir + "test/",
+        test_set = datasets.MNIST(root=self.data_dir,
                                   train=False,
                                   download=True,
                                   transform=transforms.Compose([
@@ -74,7 +74,7 @@ class CIFAR10LTDataLoader(BaseLTDataLoader):
                                                   num_classes=10)
 
     def create_dataset(self):
-        train_set = IMBALANCECIFAR10(root=self.data_dir + "train/",
+        train_set = IMBALANCECIFAR10(root=self.data_dir,
                                      imb_type='exp', imb_factor=1.0,
                                      train=True, download=True,
                                      transform=transforms.Compose([
@@ -83,7 +83,7 @@ class CIFAR10LTDataLoader(BaseLTDataLoader):
                                          transforms.ToTensor(),
                                      ]))
 
-        test_set = datasets.CIFAR10(root=self.data_dir + "test/",
+        test_set = datasets.CIFAR10(root=self.data_dir,
                                     train=True,
                                     download=True,
                                     transform=transforms.Compose([
@@ -102,7 +102,7 @@ class CIFAR100LTDataLoader(BaseLTDataLoader):
                                                    num_classes=100)
 
     def create_dataset(self):
-        train_set = IMBALANCECIFAR100(root=self.data_dir + "train/",
+        train_set = IMBALANCECIFAR100(root=self.data_dir,
                                       imb_type='exp', imb_factor=1.0,
                                       train=True, download=True,
                                       transform=transforms.Compose([
@@ -111,7 +111,34 @@ class CIFAR100LTDataLoader(BaseLTDataLoader):
                                           transforms.ToTensor(),
                                       ]))
 
-        test_set = datasets.CIFAR100(root=self.data_dir + "test/",
+        test_set = datasets.CIFAR100(root=self.data_dir,
+                                     train=False,
+                                     download=True,
+                                     transform=transforms.Compose([
+                                         transforms.ToTensor()
+                                     ]))
+        self.train_dataset = train_set
+        self.test_dataset = test_set
+
+
+class CelebALTDataLoader(BaseLTDataLoader):
+    def __init__(self, data_dir="data/", train_batch_size=80, test_batch_size=80):
+        super(CelebALTDataLoader, self).__init__(data_dir=data_dir,
+                                                 train_batch_size=train_batch_size,
+                                                 test_batch_size=test_batch_size,
+                                                 num_classes=40)
+
+    def create_dataset(self):
+        train_set = IMBALANCECIFAR100(root=self.data_dir,
+                                      imb_type='exp', imb_factor=1.0,
+                                      train=True, download=True,
+                                      transform=transforms.Compose([
+                                          transforms.RandomCrop(32, padding=4),
+                                          transforms.RandomHorizontalFlip(),
+                                          transforms.ToTensor(),
+                                      ]))
+
+        test_set = datasets.CIFAR100(root=self.data_dir,
                                      train=False,
                                      download=True,
                                      transform=transforms.Compose([
