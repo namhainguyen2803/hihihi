@@ -49,10 +49,10 @@ def compute_RL(decoded_images, real_images):
 #         list_distance.append(FID)
 #     return compute_fairness(list_distance), compute_averaging_distance(list_distance)
 
-def compute_F_AD_images(args, gen_path):
+def compute_F_AD_images(args, gen_path, list_gen_paths):
     list_distance = list()
-    for cls_id in range(args.num_classes):
-        dist = fid.compute_fid(gen_path, f"{args.images_path}/class_{cls_id}")
+    for gen_path in list_gen_paths:
+        dist = fid.compute_fid(gen_path, gen_path)
         list_distance.append(dist)
     return compute_fairness(list_distance), compute_averaging_distance(list_distance)
 
@@ -133,7 +133,8 @@ def ultimate_evaluate_fid(args,
         #                                           num_classes=args.num_classes,
         #                                           stat_dir=image_path,
         #                                           device=device)
-        F_images, AD_images = compute_F_AD_images(args, generated_images_path)
+        assert len(list_images_paths[:-2]) == args.num_classes
+        F_images, AD_images = compute_F_AD_images(args, generated_images_path, list_images_paths[:-2])
         print(f"FI: {F_images}, ADI: {AD_images}")
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)
