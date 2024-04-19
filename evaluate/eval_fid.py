@@ -26,6 +26,7 @@ def compute_F_AD_images(model,
                         tensor_real_images,
                         tensor_labels,
                         num_classes,
+                        stat_dir,
                         device):
     each_class_images = dict()
     for cls_id in range(num_classes):
@@ -43,8 +44,8 @@ def compute_F_AD_images(model,
                                           prior_distribution=prior_distribution,
                                           num_images=num_images,
                                           device=device)
-        npz_cls_images = create_compression_file(real_images, f"statistic/real_images.npz")
-        npz_gen_images = create_compression_file(generated_images, f"statistic/generated_images.npz")
+        npz_cls_images = create_compression_file(real_images, f"{stat_dir}/real_images.npz")
+        npz_gen_images = create_compression_file(generated_images, f"{stat_dir}/generated_images.npz")
         IS, FID, sFID, precision, recall = fid_evaluator_function(npz_gen_images, npz_cls_images)
         list_distance.append(FID)
     return compute_fairness(list_distance), compute_averaging_distance(list_distance)
@@ -54,6 +55,7 @@ def ultimate_evaluate_fid(args,
                           model,
                           test_loader,
                           prior_distribution,
+                          stat_dir,
                           device):
     with torch.no_grad():
         model.eval()
@@ -83,8 +85,8 @@ def ultimate_evaluate_fid(args,
                                                  num_images=num_images,
                                                  device=device).cpu()
 
-        npz_real_images = create_compression_file(tensor_real_images, "statistic/real_images.npz")
-        npz_generated_images = create_compression_file(tensor_generated_images, "statistic/generated_images.npz")
+        npz_real_images = create_compression_file(tensor_real_images, f"{stat_dir}/real_images.npz")
+        npz_generated_images = create_compression_file(tensor_generated_images, f"{stat_dir}/generated_images.npz")
         device = 'cpu'
 
         # Compute RL
@@ -111,6 +113,7 @@ def ultimate_evaluate_fid(args,
                                                   tensor_real_images=tensor_real_images,
                                                   tensor_labels=tensor_labels,
                                                   num_classes=args.num_classes,
+                                                  stat_dir=stat_dir,
                                                   device=device)
         print(f"FI: {F_images}, ADI: {AD_images}")
         RL = convert_to_cpu_number(RL)

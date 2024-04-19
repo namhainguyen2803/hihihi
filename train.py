@@ -1,4 +1,5 @@
 from tensorflow.python.ops.numpy_ops import np_config
+
 np_config.enable_numpy_behavior()
 
 import argparse
@@ -34,9 +35,9 @@ def main():
                         help='input batch size for evaluating (default: 500)')
 
     parser.add_argument('--epochs', type=int, default=200, metavar='N',
-                        help='number of epochs to train (default: 200)')
-    parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
-                        help='learning rate (default: 0.0001)')
+                        help='number of epochs to train (default: 30)')
+    parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
+                        help='learning rate (default: 0.0005)')
 
     parser.add_argument('--weight_swd', type=float, default=1,
                         help='weight of swd (default: 1)')
@@ -81,6 +82,7 @@ def main():
     args = parser.parse_args()
     # create output directory
 
+    args.outdir = os.path.join(args.outdir, args.dataset)
     args.outdir = os.path.join(args.outdir, f"lr_{args.lr}")
     args.outdir = os.path.join(args.outdir, f"fsw_{args.weight_fsw}")
     args.outdir = os.path.join(args.outdir, args.method)
@@ -95,7 +97,12 @@ def main():
     os.makedirs(outdir_end, exist_ok=True)
     os.makedirs(outdir_convergence, exist_ok=True)
     os.makedirs(outdir_latent, exist_ok=True)
-    os.makedirs("statistic", exist_ok=True)
+
+    stat_dir = os.path.join("statistic", f"lr_{args.lr}")
+    stat_dir = os.path.join(stat_dir, f"fsw_{args.weight_fsw}")
+    stat_dir = os.path.join(stat_dir, args.method)
+    os.makedirs(stat_dir, exist_ok=True)
+
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -169,12 +176,15 @@ def main():
             raise ('distribution {} not supported'.format(args.distribution))
 
     # create batch sliced_wasserstein autoencoder trainer
-    trainer = SWAEBatchTrainer(autoencoder=model, optimizer=optimizer,
+    trainer = SWAEBatchTrainer(autoencoder=model,
+                               optimizer=optimizer,
                                distribution_fn=distribution_fn,
                                num_classes=data_loader.num_classes,
                                num_projections=args.num_projections,
-                               weight_swd=args.weight_swd, weight_fsw=args.weight_fsw,
-                               device=device, method=args.method)
+                               weight_swd=args.weight_swd,
+                               weight_fsw=args.weight_fsw,
+                               device=device,
+                               method=args.method)
 
     list_RL = list()
     list_LP = list()
@@ -185,7 +195,6 @@ def main():
     list_AD_images = list()
 
     list_loss = list()
-    train_list_loss = list()
 
     with torch.no_grad():
         model.eval()
@@ -200,6 +209,7 @@ def main():
                                                                            model=model,
                                                                            test_loader=test_loader,
                                                                            prior_distribution=distribution_fn,
+                                                                           stat_dir=stat_dir,
                                                                            device=device)
         with open(output_file, 'a') as f:
             f.write("In pre-training, when evaluating test loader:\n")
@@ -247,11 +257,11 @@ def main():
                         (batch_idx + 1), len(train_loader),
                         batch['loss'].item()))
 
-        with torch.no_grad():
+        with open(output_file, 'a') as f:
+            f.write('evaluating...\n')
+        model.eval()
 
-            with open(output_file, 'a') as f:
-                f.write('evaluating...\n')
-            model.eval()
+        with torch.no_grad():
 
             if (epoch + 1) % args.log_epoch_interval == 0 or (epoch + 1) == args.epochs:
 
@@ -384,48 +394,48 @@ def main():
 
                     torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
 
-                    vutils.save_image(x_test[:100],
+                    vutils.save_image(x_test,
                                       '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))
 
-                    vutils.save_image(test_evals['decode'][:100].detach(),
+                    vutils.save_image(test_evals['decode'].detach(),
                                       '{}/{}_test_recon.png'.format(imagesdir_epoch, args.distribution),
                                       normalize=True)
 
-                    vutils.save_image(x[:100], '{}/{}_train_samples.png'.format(imagesdir_epoch, args.distribution))
+                    vutils.save_image(x, '{}/{}_train_samples.png'.format(imagesdir_epoch, args.distribution))
 
-                    vutils.save_image(batch['decode'][:100].detach(),
+                    vutils.save_image(batch['decode'].detach(),
                                       '{}/{}_train_recon.png'.format(imagesdir_epoch, args.distribution),
                                       normalize=True)
 
-                    gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=100,
+                    gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=500,
                                                device=device)
                     vutils.save_image(gen_image,
                                       '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
 
-        plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-                         f'In testing loss convergence plot of {args.method}',
-                         f"{outdir_convergence}/test_loss_convergence.png")
+    plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
+                     f'In testing loss convergence plot of {args.method}',
+                     f"{outdir_convergence}/test_loss_convergence.png")
 
-        plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
-                         f'Reconstruction Loss (RL) convergence plot of {args.method}',
-                         f"{outdir_convergence}/rl_convergence.png")
+    plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
+                     f'Reconstruction Loss (RL) convergence plot of {args.method}',
+                     f"{outdir_convergence}/rl_convergence.png")
 
-        plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
-                         f'Wasserstein Distance (WG) convergence plot of {args.method}',
-                         f"{outdir_convergence}/wg_convergence.png")
+    plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
+                     f'Wasserstein Distance (WG) convergence plot of {args.method}',
+                     f"{outdir_convergence}/wg_convergence.png")
 
-        plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
-                         f'Wasserstein Distance (LP) convergence plot of {args.method}',
-                         f"{outdir_convergence}/lp_convergence.png")
+    plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
+                     f'Wasserstein Distance (LP) convergence plot of {args.method}',
+                     f"{outdir_convergence}/lp_convergence.png")
 
-        plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
-                         f'Fairness (F) convergence plot of {args.method}',
-                         f"{outdir_convergence}/f_convergence.png")
+    plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
+                     f'Fairness (F) convergence plot of {args.method}',
+                     f"{outdir_convergence}/f_convergence.png")
 
-        # Modify the last call to have the desired pattern for output file path
-        plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-                         f'In testing loss convergence plot of {args.method}',
-                         f"{outdir_convergence}/test_loss_convergence.png")
+    # Modify the last call to have the desired pattern for output file path
+    plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
+                     f'In testing loss convergence plot of {args.method}',
+                     f"{outdir_convergence}/test_loss_convergence.png")
 
 
 if __name__ == '__main__':
