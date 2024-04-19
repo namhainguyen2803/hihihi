@@ -1,5 +1,4 @@
 from tensorflow.python.ops.numpy_ops import np_config
-
 np_config.enable_numpy_behavior()
 
 import argparse
@@ -288,6 +287,7 @@ def main():
                                                                                    model=model,
                                                                                    test_loader=test_loader,
                                                                                    prior_distribution=distribution_fn,
+                                                                                   stat_dir=stat_dir,
                                                                                    device=device)
 
                 with open(output_file, 'a') as f:
