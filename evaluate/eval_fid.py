@@ -1,3 +1,5 @@
+import os
+
 import torch
 
 from evaluate.eval_ws import compute_F_AD
@@ -58,8 +60,17 @@ def ultimate_evaluate_fid(args,
                                                  num_images=num_images,
                                                  device=device).cpu()
 
-        generated_images_path = make_jpg_images(tensor=tensor_generated_images,
-                                                output_folder=args.gen_dir)
+        num_jpg = 0
+        for filename in os.listdir(args.gen_dir):
+            if filename.lower().endswith('.jpg'):
+                num_jpg += 1
+
+        if num_jpg == total_images:
+            print(f"Have already had generated image in {args.gen_dir}")
+        elif num_jpg == 0:
+            generated_images_path = make_jpg_images(tensor=tensor_generated_images, output_folder=args.gen_dir)
+        else:
+            raise Exception(f"Please delete {args.gen_dir} and run again")
 
         device = 'cpu'
 
