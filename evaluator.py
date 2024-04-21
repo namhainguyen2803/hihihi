@@ -34,7 +34,6 @@ def main():
 
     parser.add_argument('--pretrained-model', type=str, metavar='S',
                         help='pretrained model path')
-
     parser.add_argument('--method', type=str, default='EFBSW', metavar='MED',
                         help='method (default: EFBSW)')
     parser.add_argument('--num-projections', type=int, default=10000, metavar='NP',
@@ -44,7 +43,7 @@ def main():
 
     parser.add_argument('--distribution', type=str, default='circle', metavar='DIST',
                         help='Latent Distribution (default: circle)')
-
+    parser.add_argument('--stat-dir', default='stats', help='path to images')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--num-workers', type=int, default=8, metavar='N',
@@ -63,7 +62,10 @@ def main():
     os.makedirs(gen_dir, exist_ok=True)
     args.gen_dir = gen_dir
 
+    args.stat_dir = os.path.join(args.stat_dir, args.dataset)
+
     print(f"gen_dir: {args.gen_dir}")
+    print(f"stat_dir: {args.stat_dir}")
 
     if args.dataset == 'mnist':
         data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)

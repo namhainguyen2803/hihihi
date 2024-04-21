@@ -1,13 +1,13 @@
 import torch
 
 from evaluate.eval_ws import compute_F_AD
-from cleanfid import fid
+from fid.fid_score import compute_fid_score
 from utils import *
 from metrics.wasserstein import *
 
 
 def compute_WG(generated_images, real_images):
-    return fid.compute_fid(generated_images, real_images)
+    return compute_fid_score(generated_images, real_images)
 
 
 def compute_LP(encoded_samples, prior_samples):
@@ -20,10 +20,10 @@ def compute_RL(decoded_images, real_images):
     return RL
 
 
-def compute_F_AD_images(args, gen_path, list_gen_paths):
+def compute_F_AD_images(gen_path, list_class_paths):
     list_distance = list()
-    for gen_path in list_gen_paths:
-        dist = fid.compute_fid(gen_path, gen_path)
+    for cls_path in list_class_paths:
+        dist = compute_fid_score(gen_path, cls_path)
         list_distance.append(dist)
     return compute_fairness(list_distance), compute_averaging_distance(list_distance)
 
@@ -36,49 +36,39 @@ def ultimate_evaluate_fid(args,
     with torch.no_grad():
         model.eval()
 
-        list_real_images = list()
         list_labels = list()
         list_encoded_images = list()
-        list_decoded_images = list()
 
-        list_images_paths = list()
+        RL = 0
+        total_images = 0
 
         for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-            list_real_images.append(x_test)
             list_labels.append(y_test)
-
+            num_images = x_test.shape[0]
+            total_images += num_images
             decoded_images, encoded_images = model(x_test.to(device))
-
             list_encoded_images.append(encoded_images.detach())
-            list_decoded_images.append(decoded_images.detach())
+            RL += compute_RL(x_test, decoded_images) * num_images
 
-            for cls_id in range(args.num_classes):
-                class_jpg = make_jpg_images(tensor=x_test[y_test == cls_id],
-                                            output_folder=f"{args.images_path}/class_{cls_id}")
-                list_images_paths.append(class_jpg)
-
-        tensor_real_images = torch.cat(list_real_images, dim=0).cpu()
         tensor_labels = torch.cat(list_labels, dim=0).cpu()
         tensor_encoded_images = torch.cat(list_encoded_images, dim=0).cpu()
-        tensor_decoded_images = torch.cat(list_decoded_images, dim=0).cpu()
-
-        num_images = tensor_real_images.shape[0]
+        num_images = tensor_labels.shape[0]
         tensor_generated_images = generate_image(model=model,
                                                  prior_distribution=prior_distribution,
                                                  num_images=num_images,
                                                  device=device).cpu()
 
         generated_images_path = make_jpg_images(tensor=tensor_generated_images,
-                                                output_folder=f"{args.gen_dir}/generated_images")
-        real_images_path = make_jpg_images(tensor=tensor_real_images, output_folder=f"{args.images_path}/ground_truth")
+                                                output_folder=args.gen_dir)
 
         device = 'cpu'
 
         # Compute RL
-        RL = compute_RL(tensor_decoded_images, tensor_real_images)
+        RL = RL / total_images
         print(f"RL: {RL}")
 
         # Compute WG
+        real_images_path = f"{args.stat_dir}/ground_truth.npz"
         WG = compute_WG(generated_images_path, real_images_path)
         print(f"WG: {WG}")
 
@@ -97,7 +87,11 @@ def ultimate_evaluate_fid(args,
         print(f"F: {F}, AD: {AD}")
 
         # Compute F and AD in image space
-        F_images, AD_images = compute_F_AD_images(args, generated_images_path, list_images_paths)
+        list_images_paths = list()
+        for cls_id in range(args.num_classes):
+            stat_cls = f"{args.stat_dir}/class_{cls_id}.npz"
+            list_images_paths.append(stat_cls)
+        F_images, AD_images = compute_F_AD_images(generated_images_path, list_images_paths)
         print(f"FI: {F_images}, ADI: {AD_images}")
 
         RL = convert_to_cpu_number(RL)
