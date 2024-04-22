@@ -19,7 +19,7 @@ def compute_F_AD(list_features,
 
 
 def compute_fairness_and_averaging_distance_in_images_space(model,
-                                                            prior_distribution,
+                                                            tensor_flatten_generated_images,
                                                             tensor_flatten_real_images,
                                                             tensor_labels,
                                                             num_classes,
@@ -35,13 +35,7 @@ def compute_fairness_and_averaging_distance_in_images_space(model,
     list_ws_distance = list()
     for cls_id, list_flatten_real_images in each_class_images.items():
         flatten_real_images = torch.cat(list_flatten_real_images, dim=0).cpu()
-        num_images = len(flatten_real_images)
-        generated_images = generate_image(model=model,
-                                          prior_distribution=prior_distribution,
-                                          num_images=num_images,
-                                          device=device)
-        flatten_generated_images = generated_images.reshape(num_images, -1)
-        ws = compute_true_Wasserstein(X=flatten_generated_images, Y=flatten_real_images)
+        ws = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=flatten_real_images)
         list_ws_distance.append(ws)
 
     return compute_fairness(list_ws_distance), compute_averaging_distance(list_ws_distance)
@@ -104,7 +98,7 @@ def ultimate_evaluation(args,
 
         # Compute F and AD in image space
         F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
-                                                                                      prior_distribution=prior_distribution,
+                                                                                      tensor_flatten_generated_images=tensor_flatten_generated_images,
                                                                                       tensor_flatten_real_images=tensor_flatten_real_images,
                                                                                       tensor_labels=tensor_labels,
                                                                                       num_classes=args.num_classes,

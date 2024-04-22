@@ -3,6 +3,7 @@ from torchvision import datasets, transforms
 import torch
 from torch.utils.data import DataLoader
 from dataloader.longtailed import IMBALANCECIFAR10, IMBALANCECIFAR100, IMBALANCEMNIST
+from torch.utils.data import ConcatDataset
 
 
 class BaseLTDataLoader:
@@ -31,7 +32,7 @@ class BaseLTDataLoader:
             class_idxs=all_classes_indices,
             batch_size=self.train_batch_size,
             n_batches=len(self.train_dataset.targets) // self.train_batch_size,
-            alpha=0.4,
+            alpha=1.0,
             kind='fixed'
         )
 
@@ -56,12 +57,20 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                        transforms.ToTensor()
                                    ]))
 
-        test_set = datasets.MNIST(root=self.data_dir,
-                                  train=False,
-                                  download=True,
-                                  transform=transforms.Compose([
-                                      transforms.ToTensor()
-                                  ]))
+        test_set_1 = datasets.MNIST(root=self.data_dir,
+                                    train=True,
+                                    download=True,
+                                    transform=transforms.Compose([
+                                        transforms.ToTensor()
+                                    ]))
+        test_set_2 = datasets.MNIST(root=self.data_dir,
+                                    train=False,
+                                    download=True,
+                                    transform=transforms.Compose([
+                                        transforms.ToTensor()
+                                    ]))
+        test_set = ConcatDataset([test_set_1, test_set_2])
+
         self.train_dataset = train_set
         self.test_dataset = test_set
 
@@ -83,12 +92,26 @@ class CIFAR10LTDataLoader(BaseLTDataLoader):
                                          transforms.ToTensor(),
                                      ]))
 
-        test_set = datasets.CIFAR10(root=self.data_dir,
-                                    train=True,
-                                    download=True,
-                                    transform=transforms.Compose([
-                                        transforms.ToTensor()
-                                    ]))
+        # test_set = datasets.CIFAR10(root=self.data_dir,
+        #                             train=True,
+        #                             download=True,
+        #                             transform=transforms.Compose([
+        #                                 transforms.ToTensor()
+        #                             ]))
+
+        test_set_1 = datasets.CIFAR10(root=self.data_dir,
+                                      train=True,
+                                      download=True,
+                                      transform=transforms.Compose([
+                                          transforms.ToTensor()
+                                      ]))
+        test_set_2 = datasets.CIFAR10(root=self.data_dir,
+                                      train=False,
+                                      download=True,
+                                      transform=transforms.Compose([
+                                          transforms.ToTensor()
+                                      ]))
+        test_set = ConcatDataset([test_set_1, test_set_2])
 
         self.train_dataset = train_set
         self.test_dataset = test_set
@@ -119,7 +142,6 @@ class CIFAR100LTDataLoader(BaseLTDataLoader):
                                      ]))
         self.train_dataset = train_set
         self.test_dataset = test_set
-
 
 # class CelebALTDataLoader(BaseLTDataLoader):
 #     def __init__(self, data_dir="data/", train_batch_size=80, test_batch_size=80):

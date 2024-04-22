@@ -274,6 +274,17 @@ def lowerbound_FEFBSW_list(Xs, X, L=10, p=2, device='cpu'):
     sws = torch.sum(weights * wasserstein_distance, dim=1)
     return torch.max(sws)
 
+def OBSW(Xs,X,L=10,lam=1,p=2,device='cpu'):
+    dim = X.size(1)
+    theta = rand_projections(dim, L, device)
+    Xs_prod = torch.matmul(Xs, theta.transpose(0, 1))
+    X_prod = torch.matmul(X, theta.transpose(0, 1))
+    Xs_prod_sorted = torch.sort(Xs_prod,dim=1)[0]
+    X_prod_sorted = torch.sort(X_prod, dim=0)[0]
+    wasserstein_distance = torch.abs(Xs_prod_sorted-X_prod_sorted)
+    wasserstein_distance = torch.mean(torch.pow(wasserstein_distance, p), dim=1)# K\times L
+    sw = torch.mean(wasserstein_distance,dim=1)
+    return torch.mean(sw)+lam*torch.cdist(sw.view(-1,1),sw.view(-1,1),p=1).sum()/(sw.shape[0]*sw.shape[0] - sw.shape[0])
 
 def sliced_wasserstein_distance(encoded_samples,
                                 distribution_samples,
