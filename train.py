@@ -79,9 +79,12 @@ def main():
     # create output directory
 
     args.outdir = os.path.join(args.outdir, args.dataset)
+    args.outdir = os.path.join(args.outdir, f"seed_{args.seed}")
     args.outdir = os.path.join(args.outdir, f"lr_{args.lr}")
     args.outdir = os.path.join(args.outdir, f"fsw_{args.weight_fsw}")
     args.outdir = os.path.join(args.outdir, args.method)
+
+    args.datadir = os.path.join(args.datadir, args.dataset)
 
     outdir_best = os.path.join(args.outdir, "best")
     outdir_end = os.path.join(args.outdir, "end")
@@ -93,11 +96,6 @@ def main():
     os.makedirs(outdir_end, exist_ok=True)
     os.makedirs(outdir_convergence, exist_ok=True)
     os.makedirs(outdir_latent, exist_ok=True)
-
-    stat_dir = os.path.join("statistic", f"lr_{args.lr}")
-    stat_dir = os.path.join(stat_dir, f"fsw_{args.weight_fsw}")
-    stat_dir = os.path.join(stat_dir, args.method)
-    os.makedirs(stat_dir, exist_ok=True)
 
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -205,7 +203,6 @@ def main():
                                                                            model=model,
                                                                            test_loader=test_loader,
                                                                            prior_distribution=distribution_fn,
-                                                                           stat_dir=stat_dir,
                                                                            device=device)
         with open(output_file, 'a') as f:
             f.write("In pre-training, when evaluating test loader:\n")
@@ -284,7 +281,6 @@ def main():
                                                                                    model=model,
                                                                                    test_loader=test_loader,
                                                                                    prior_distribution=distribution_fn,
-                                                                                   stat_dir=stat_dir,
                                                                                    device=device)
 
                 with open(output_file, 'a') as f:
@@ -327,9 +323,9 @@ def main():
                                     -test_encode[test_targets == class_label, 1],
                                     c=[colors[i]],
                                     cmap=plt.cm.Spectral,
-                                    label=class_label,
-                                    alpha=0.7,
-                                    s=20)
+                                    label=class_label)
+                                    # alpha=0.7,
+                                    # s=20)
                     plt.legend()
                     title = f'Latent Space of {args.method} method'
                     plt.title(title)
@@ -350,9 +346,9 @@ def main():
                                     -tsne_result[test_targets == class_label, 1],
                                     c=[colors[i]],
                                     cmap=plt.cm.Spectral,
-                                    label=class_label,
-                                    alpha=0.7,
-                                    s=20)
+                                    label=class_label)
+                                    # alpha=0.7,
+                                    # s=20)
                     plt.legend()
                     title = f'Latent Space of {args.method} method'
                     plt.title(title)
@@ -389,7 +385,7 @@ def main():
                     os.makedirs(imagesdir_epoch, exist_ok=True)
                     os.makedirs(chkptdir_epoch, exist_ok=True)
 
-                    torch.save(model.state_dict(), '{}/{}.pth'.format(chkptdir_epoch, args.dataset))
+                    torch.save(model.state_dict(), '{}/{}_{}.pth'.format(chkptdir_epoch, args.dataset, args.method))
 
                     vutils.save_image(x_test,
                                       '{}/{}_test_samples.png'.format(imagesdir_epoch, args.distribution))

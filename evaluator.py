@@ -11,7 +11,7 @@ from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand,
 
 from evaluate.eval_ws import *
 from evaluate.eval_fid import *
-
+from fid.inception import *
 import torch.optim as optim
 import torchvision.utils as vutils
 from dataloader.dataloader import *
@@ -31,6 +31,16 @@ def main():
                         help='input batch size for training (default: 500)')
     parser.add_argument('--batch-size-test', type=int, default=500, metavar='BST',
                         help='input batch size for evaluating (default: 500)')
+
+    parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
+                        help='learning rate (default: 0.0005)')
+    parser.add_argument('--weight_fsw', type=float, default=1,
+                        help='weight of fsw (default: 1)')
+
+    parser.add_argument("--dims", type=int, default=2048,
+                        choices=list(InceptionV3.BLOCK_INDEX_BY_DIM),
+                        help=("Dimensionality of Inception features to use. "
+                              "By default, uses pool3 features"))
 
     parser.add_argument('--pretrained-model', type=str, metavar='S',
                         help='pretrained model path')
@@ -56,16 +66,37 @@ def main():
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    os.makedirs(args.images_path, exist_ok=True)
     args.images_path = os.path.join(args.images_path, args.dataset)
-    gen_dir = os.path.join(args.images_path, args.method)
+    args.images_path = os.path.join(args.images_path, f"seed_{args.seed}")
+    args.gen_dir = os.path.join(args.images_path, f"lr_{args.lr}")
+    args.gen_dir = os.path.join(args.gen_dir, f"fsw_{args.weight_fsw}")
+    gen_dir = os.path.join(args.gen_dir, args.method)
     os.makedirs(gen_dir, exist_ok=True)
     args.gen_dir = gen_dir
 
+    args.outdir = os.path.join(args.outdir, args.dataset)
+    args.outdir = os.path.join(args.outdir, f"seed_{args.seed}")
+    args.outdir = os.path.join(args.outdir, f"lr_{args.lr}")
+    args.outdir = os.path.join(args.outdir, f"fsw_{args.weight_fsw}")
+    args.outdir = os.path.join(args.outdir, args.method)
+
+    args.datadir = os.path.join(args.datadir, args.dataset)
+
+    if args.pretrained_model is None:
+        args.pretrained_model = f"{args.outdir}/end/model/{args.dataset}_{args.method}.pth"
+
     args.stat_dir = os.path.join(args.stat_dir, args.dataset)
+    args.stat_dir = os.path.join(args.stat_dir, f"seed_{args.seed}")
+    args.stat_gen_dir = os.path.join(args.stat_dir, f"lr_{args.lr}")
+    args.stat_gen_dir = os.path.join(args.stat_gen_dir, f"fsw_{args.weight_fsw}")
+    os.makedirs(args.stat_gen_dir, exist_ok=True)
+
+    args.stat_gen_dir = f"{args.stat_gen_dir}/{args.method}"
 
     print(f"gen_dir: {args.gen_dir}")
+    print(f"stat_gen_dir: {args.stat_gen_dir}")
     print(f"stat_dir: {args.stat_dir}")
+    print(f"pretrained model dir: {args.pretrained_model}")
 
     if args.dataset == 'mnist':
         data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
@@ -110,7 +141,7 @@ def main():
                                                                        prior_distribution=distribution_fn,
                                                                        device=device)
 
-        output_file = f'{args.outdir}/output_{args.method}.log'
+        output_file = f'{args.outdir}/evaluate_{args.method}.log'
         with open(output_file, 'a') as f:
             f.write("In testing, when evaluating in train loader:\n")
             f.write(f" +) Reconstruction loss (RL): {RL}\n")
@@ -121,6 +152,7 @@ def main():
             f.write(f" +) Fairness in images space (FI): {F_images}\n")
             f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
             f.write("\n")
+
 
 if __name__ == "__main__":
     main()
