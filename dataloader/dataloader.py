@@ -50,9 +50,9 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                                 num_classes=10)
 
     def create_dataset(self):
-        train_set = IMBALANCEMNIST(self.data_dir,
+        train_set = datasets.MNIST(self.data_dir,
                                    train=True, download=True,
-                                   imb_type='exp', imb_factor=1.0,
+                                   # imb_type='exp', imb_factor=1.0,
                                    transform=transforms.Compose([
                                        transforms.ToTensor()
                                    ]))
