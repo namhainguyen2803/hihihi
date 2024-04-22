@@ -3,9 +3,6 @@ from metrics.wasserstein import *
 
 
 class SWAEBatchTrainer:
-    import torch
-    from metrics.wasserstein import *
-
     class SWAEBatchTrainer:
         """ Sliced Wasserstein Autoencoder Batch Trainer.
 
