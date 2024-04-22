@@ -58,8 +58,7 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                    ]))
 
         test_set = datasets.MNIST(root=self.data_dir,
-                                  train=True,
-                                  download=False,
+                                  train=True, download=False,
                                   transform=transforms.Compose([
                                       transforms.ToTensor()
                                   ]))
