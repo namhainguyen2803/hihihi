@@ -57,19 +57,19 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                        transforms.ToTensor()
                                    ]))
 
-        test_set_1 = datasets.MNIST(root=self.data_dir,
-                                    train=True,
-                                    download=True,
-                                    transform=transforms.Compose([
-                                        transforms.ToTensor()
-                                    ]))
-        test_set_2 = datasets.MNIST(root=self.data_dir,
-                                    train=False,
-                                    download=True,
-                                    transform=transforms.Compose([
-                                        transforms.ToTensor()
-                                    ]))
-        test_set = ConcatDataset([test_set_1, test_set_2])
+        test_set = datasets.MNIST(root=self.data_dir,
+                                  train=True,
+                                  download=False,
+                                  transform=transforms.Compose([
+                                      transforms.ToTensor()
+                                  ]))
+        # test_set_2 = datasets.MNIST(root=self.data_dir,
+        #                             train=False,
+        #                             download=True,
+        #                             transform=transforms.Compose([
+        #                                 transforms.ToTensor()
+        #                             ]))
+        # test_set = ConcatDataset([test_set_1, test_set_2])
 
         self.train_dataset = train_set
         self.test_dataset = test_set
