@@ -18,12 +18,10 @@ def compute_F_AD(list_features,
     return compute_fairness(dist_swd), compute_averaging_distance(dist_swd)
 
 
-def compute_fairness_and_averaging_distance_in_images_space(model,
-                                                            tensor_flatten_generated_images,
+def compute_fairness_and_averaging_distance_in_images_space(tensor_flatten_generated_images,
                                                             tensor_flatten_real_images,
                                                             tensor_labels,
-                                                            num_classes,
-                                                            device):
+                                                            num_classes):
     each_class_images = dict()
     for cls_id in range(num_classes):
         if cls_id in each_class_images:
@@ -97,12 +95,10 @@ def ultimate_evaluation(args,
                              device=device)
 
         # Compute F and AD in image space
-        F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
-                                                                                      tensor_flatten_generated_images=tensor_flatten_generated_images,
+        F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(tensor_flatten_generated_images=tensor_flatten_generated_images,
                                                                                       tensor_flatten_real_images=tensor_flatten_real_images,
                                                                                       tensor_labels=tensor_labels,
-                                                                                      num_classes=args.num_classes,
-                                                                                      device=device)
+                                                                                      num_classes=args.num_classes)
 
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)
