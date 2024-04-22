@@ -32,7 +32,7 @@ class BaseLTDataLoader:
             class_idxs=all_classes_indices,
             batch_size=self.train_batch_size,
             n_batches=len(self.train_dataset.targets) // self.train_batch_size,
-            alpha=1.0,
+            alpha=0.4,
             kind='fixed'
         )
 
