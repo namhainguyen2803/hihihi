@@ -1,3 +1,6 @@
+# from tensorflow.python.ops.numpy_ops import np_config
+# np_config.enable_numpy_behavior()
+
 import argparse
 import matplotlib as mpl
 
@@ -10,13 +13,12 @@ from swae.trainer import SWAEBatchTrainer
 from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
 
 from evaluate.eval_ws import *
-from evaluate.eval_fid import *
+# from evaluate.eval_fid import *
 
 import torch.optim as optim
 import torchvision.utils as vutils
 from dataloader.dataloader import *
 from utils import *
-
 
 def main():
     # train args
@@ -42,7 +44,7 @@ def main():
     parser.add_argument('--method', type=str, default='FEFBSW', metavar='MED',
                         help='method (default: FEFBSW)')
     parser.add_argument('--num-projections', type=int, default=10000, metavar='NP',
-                        help='number of projections (default: 500)')
+                        help='number of projections (default: 1000)')
     parser.add_argument('--embedding-size', type=int, default=48, metavar='ES',
                         help='embedding latent space (default: 48)')
 
@@ -80,7 +82,7 @@ def main():
                         help='hyper-parameter of OBSW method')
     args = parser.parse_args()
     # create output directory
-    
+
     if args.method == "OBSW" and args.lambda_obsw != 1:
         args.method = f"OBSW_{args.lambda_obsw}"
         
@@ -100,7 +102,7 @@ def main():
     os.makedirs(outdir_checkpoint, exist_ok=True)
     os.makedirs(outdir_convergence, exist_ok=True)
     os.makedirs(outdir_latent, exist_ok=True)
-
+    
     # determine device and device dep. args
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -121,8 +123,8 @@ def main():
                 ))
         else:
             f.write(
-                'batch size {}\nepochs {}\n{}: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}\n'.format(
-                    args.batch_size, args.epochs, args.optimizer,
+                'method {}\n fsw: {}\nbatch size {}\nepochs {}\n{}: lr {} betas {}/{}\ndistribution {}\nusing device {}\nseed set to {}\n'.format(
+                    args.method, args.weight_fsw, args.batch_size, args.epochs, args.optimizer,
                     args.lr, args.beta1, args.beta2, args.distribution,
                     device.type, args.seed
                 ))
@@ -131,7 +133,7 @@ def main():
     if args.dataset == 'mnist':
         data_loader = MNISTLTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
     elif args.dataset == 'cifar10':
-        data_loader = CIFAR10LTDataLoader(train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
+        data_loader = CIFAR10LTDataLoader(data_dir=args.datadir, train_batch_size=args.batch_size, test_batch_size=args.batch_size_test)
     else:
         data_loader = None
     train_loader, test_loader = data_loader.create_dataloader()
@@ -184,18 +186,7 @@ def main():
                                device=device, 
                                method=args.method,
                                lambda_obsw=args.lambda_obsw)
-
-    list_RL = list()
-    list_LP = list()
-    list_WG = list()
-    list_F = list()
-    list_AD = list()
-    list_F_images = list()
-    list_AD_images = list()
-
     list_loss = list()
-
-    eval_best = 1000
 
     print()
     # train networks for n epochs
@@ -229,9 +220,9 @@ def main():
         with torch.no_grad():
 
             if (epoch + 1) % args.log_epoch_interval == 0 or (epoch + 1) == args.epochs:
-
+                
                 test_encode, test_targets, test_loss = list(), list(), 0.0
-
+                
                 for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
                     test_evals = trainer.test_on_batch(x_test)
 
@@ -246,29 +237,28 @@ def main():
                 test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
                 print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
 
-                # plot
-                plt.figure(figsize=(10, 10))
+                tsne = TSNE(n_components=2, random_state=42)
+                tsne_result = tsne.fit_transform(test_encode)
 
                 classes = np.unique(test_targets)
                 colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
-
-                # Plot each class separately
+                e = epoch + 1
+                # Plot t-SNE
+                plt.figure(figsize=(10, 10))
                 for i, class_label in enumerate(classes):
-                    plt.scatter(test_encode[test_targets == class_label, 0],
-                                -test_encode[test_targets == class_label, 1],
+                    plt.scatter(tsne_result[test_targets == class_label, 0],
+                                -tsne_result[test_targets == class_label, 1],
                                 c=[colors[i]],
                                 cmap=plt.cm.Spectral,
-                                label=class_label)
-                                # alpha=0.7,
-                                # s=20)
+                                label=class_label,
+                                alpha=0.7,
+                                s=20)
                 plt.legend()
                 title = f'Latent Space of {args.method} method'
                 plt.title(title)
-                plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, epoch))
+                plt.savefig('{}/epoch_{}_test_latent.png'.format(outdir_latent, e))
                 plt.close()
-            
-            if (epoch + 1) % 100 == 0 or (epoch + 1) == args.epochs:
-                e = epoch + 1
+
                 outdir_end = os.path.join(outdir_checkpoint, f"epoch_{e}")
                 imagesdir_epoch = os.path.join(outdir_end, "images")
                 chkptdir_epoch = os.path.join(outdir_end, "model")
@@ -289,47 +279,10 @@ def main():
                 vutils.save_image(gen_image,
                                     '{}/gen_image.png'.format(imagesdir_epoch), normalize=True)
 
-
-    RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                model=model,
-                                                                test_loader=test_loader,
-                                                                prior_distribution=distribution_fn,
-                                                                device=device)
-    with open(output_file, 'a') as f:
-        f.write("In pre-training, when evaluating test loader:\n")
-        f.write(f" +) Reconstruction loss (RL): {RL}\n")
-        f.write(f" +) Wasserstein distance between generated and real images (WG): {WG}\n")
-        f.write(f" +) Wasserstein distance between posterior and prior distribution (LP): {LP}\n")
-        f.write(f" +) Fairness (F): {F}\n")
-        f.write(f" +) Averaging distance (AD): {AD}\n")
-        f.write(f" +) Fairness in images space (FI): {F_images}\n")
-        f.write(f" +) Averaging distance in images space (ADI): {AD_images}\n")
-        f.write("\n")
-        
+    # Modify the last call to have the desired pattern for output file path
     plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
                      f'In testing loss convergence plot of {args.method}',
                      f"{outdir_convergence}/test_loss_convergence.png")
-
-    # plot_convergence(range(1, len(list_RL) + 1), list_RL, 'Reconstruction Loss (RL)',
-    #                  f'Reconstruction Loss (RL) convergence plot of {args.method}',
-    #                  f"{outdir_convergence}/rl_convergence.png")
-
-    # plot_convergence(range(1, len(list_WG) + 1), list_WG, 'Wasserstein Distance (WG)',
-    #                  f'Wasserstein Distance (WG) convergence plot of {args.method}',
-    #                  f"{outdir_convergence}/wg_convergence.png")
-
-    # plot_convergence(range(1, len(list_LP) + 1), list_LP, 'Wasserstein Distance (LP)',
-    #                  f'Wasserstein Distance (LP) convergence plot of {args.method}',
-    #                  f"{outdir_convergence}/lp_convergence.png")
-
-    # plot_convergence(range(1, len(list_F) + 1), list_F, 'Fairness (F)',
-    #                  f'Fairness (F) convergence plot of {args.method}',
-    #                  f"{outdir_convergence}/f_convergence.png")
-
-    # # Modify the last call to have the desired pattern for output file path
-    # plot_convergence(range(1, len(list_loss) + 1), list_loss, 'Test loss',
-    #                  f'In testing loss convergence plot of {args.method}',
-    #                  f"{outdir_convergence}/test_loss_convergence.png")
 
 
 if __name__ == '__main__':

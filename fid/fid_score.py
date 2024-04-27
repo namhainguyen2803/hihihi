@@ -42,6 +42,7 @@ import torchvision.transforms as TF
 from PIL import Image
 from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
+from fid.inception import InceptionV3
 
 try:
     from tqdm import tqdm
@@ -49,9 +50,6 @@ except ImportError:
     # If tqdm is not available, provide a mock version of it
     def tqdm(x):
         return x
-
-
-from fid.inception import InceptionV3
 
 IMAGE_EXTENSIONS = {"bmp", "jpg", "jpeg", "pgm", "png", "ppm", "tif", "tiff", "webp"}
 
@@ -73,8 +71,7 @@ class ImagePathDataset(torch.utils.data.Dataset):
 
 
 def get_activations(
-    files, model, batch_size=50, dims=2048, device="cpu", num_workers=1
-):
+    files, model, batch_size=50, dims=2048, device="cpu", num_workers=1):
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
@@ -199,8 +196,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_activation_statistics(
-    files, model, batch_size=50, dims=2048, device="cpu", num_workers=1
-):
+    files, model, batch_size=50, dims=2048, device="cpu", num_workers=1):
     """Calculation of the statistics used by the FID.
     Params:
     -- files       : List of image files paths
@@ -282,27 +278,20 @@ def save_fid_stats(paths, batch_size, device, dims, num_workers=1):
     np.savez_compressed(paths[1], mu=m1, sigma=s1)
 
 
-def fid_score(dims=2048, batch_size=50, device=None, num_workers=None, save_stats=False, list_path=None):
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    else:
-        device = torch.device(device)
+def compute_fid_score(path_1, path_2, batch_size=128, dims=2048, num_workers=1):
+    device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
 
     if num_workers is None:
         try:
             num_cpus = len(os.sched_getaffinity(0))
         except AttributeError:
             num_cpus = os.cpu_count()
+
         num_workers = min(num_cpus, 8) if num_cpus is not None else 0
+    else:
+        num_workers = num_workers
 
-    if save_stats:
-        save_fid_stats(list_path, batch_size, device, dims, num_workers)
-        return
-
-    fid_value = calculate_fid_given_paths(list_path, batch_size, device, dims, num_workers)
-    print("FID: ", fid_value)
-
+    fid_value = calculate_fid_given_paths(
+        [path_1, path_2], batch_size, device, dims, num_workers
+    )
     return fid_value
-
-
-

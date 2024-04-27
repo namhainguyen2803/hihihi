@@ -114,3 +114,14 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# results
+result*/
+images/
+images3/
+trash/
+*.bash
+classify_image_graph_def.pb
+stats/
+data/
+fid/fid_inceptionV3.pth

@@ -16,7 +16,7 @@ class SWAEBatchTrainer:
     """
 
     def __init__(self, autoencoder, optimizer, distribution_fn, num_classes=10,
-                 num_projections=200, p=2, weight_swd=1, weight_fsw=1, device=None, method="FEFBSW"):
+                 num_projections=200, p=2, weight_swd=1, weight_fsw=1, device=None, method="FEFBSW", lambda_obsw=1.):
         self.model_ = autoencoder
         self.optimizer = optimizer
         self._distribution_fn = distribution_fn
@@ -30,6 +30,7 @@ class SWAEBatchTrainer:
         self.weight_fsw = weight_fsw
 
         self.method = method
+        self.lambda_obsw = lambda_obsw
 
     def train_on_batch(self, x, y):
         # reset gradients
@@ -107,6 +108,8 @@ class SWAEBatchTrainer:
         elif self.method == "BSW":
             fsw = BSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
 
+        elif self.method == "OBSW":
+            fsw = OBSW(Xs=list_z_posterior,X=z_posterior,L=self.num_projections_,lam=self.lambda_obsw,device=self._device)
         else:
             fsw = 0
 

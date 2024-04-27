@@ -19,8 +19,8 @@ def compute_F_AD(list_features,
 
 
 def compute_fairness_and_averaging_distance_in_images_space(model,
-                                                            prior_distribution,
                                                             tensor_flatten_real_images,
+                                                            prior_distribution,
                                                             tensor_labels,
                                                             num_classes,
                                                             device):
@@ -34,14 +34,14 @@ def compute_fairness_and_averaging_distance_in_images_space(model,
 
     list_ws_distance = list()
     for cls_id, list_flatten_real_images in each_class_images.items():
-        flatten_real_images = torch.cat(list_flatten_real_images, dim=0).cpu()
-        num_images = len(flatten_real_images)
-        generated_images = generate_image(model=model,
-                                          prior_distribution=prior_distribution,
-                                          num_images=num_images,
-                                          device=device)
-        flatten_generated_images = generated_images.reshape(num_images, -1)
-        ws = compute_true_Wasserstein(X=flatten_generated_images, Y=flatten_real_images)
+        flatten_real_images = torch.cat(list_flatten_real_images, dim=0)
+        num_images_class = flatten_real_images.shape[0]
+        tensor_generated_images = generate_image(model=model,
+                                                 prior_distribution=prior_distribution,
+                                                 num_images=num_images_class,
+                                                 device=device)
+        tensor_flatten_generated_images = tensor_generated_images.reshape(num_images_class, -1)
+        ws = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=flatten_real_images)
         list_ws_distance.append(ws)
 
     return compute_fairness(list_ws_distance), compute_averaging_distance(list_ws_distance)
@@ -54,62 +54,59 @@ def ultimate_evaluation(args,
                         device='cpu'):
     with torch.no_grad():
         model.eval()
-
-        list_real_images = list()
+        model.to("cpu")
+        
         list_labels = list()
         list_encoded_images = list()
-        list_decoded_images = list()
+        list_real_images = list()
+        RL = 0
+        total_images = 0
 
         for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
             list_real_images.append(x_test)
             list_labels.append(y_test)
-
-            decoded_images, encoded_images = model(x_test.to(device))
-
+            num_images = x_test.shape[0]
+            total_images += num_images
+            decoded_images, encoded_images = model(x_test)
             list_encoded_images.append(encoded_images.detach())
-            list_decoded_images.append(decoded_images.detach())
+            RL += torch.nn.functional.binary_cross_entropy(x_test, decoded_images) * num_images
 
-        tensor_real_images = torch.cat(list_real_images, dim=0).cpu()
-        tensor_labels = torch.cat(list_labels, dim=0).cpu()
-        tensor_encoded_images = torch.cat(list_encoded_images, dim=0).cpu()
-        tensor_decoded_images = torch.cat(list_decoded_images, dim=0).cpu()
-        tensor_generated_images = generate_image(model=model,
-                                                 prior_distribution=prior_distribution,
-                                                 num_images=tensor_real_images.shape[0],
-                                                 device=device).cpu()
+        tensor_real_images = torch.cat(list_real_images, dim=0)
+        tensor_labels = torch.cat(list_labels, dim=0)
+        tensor_encoded_images = torch.cat(list_encoded_images, dim=0)
 
-        num_images = tensor_real_images.shape[0]
-
-        tensor_flatten_real_images = tensor_real_images.view(num_images, -1)
-        tensor_flatten_generated_images = tensor_generated_images.view(num_images, -1)
-
-        device = 'cpu'
-
+        print(f"Number of images in testing: {total_images}")
         # Compute RL
-        RL = torch.nn.functional.binary_cross_entropy(tensor_decoded_images, tensor_real_images)
-
+        RL = RL / total_images
+        print(RL)
+        
         # Compute WG
-        WG = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=tensor_flatten_real_images)
-
+        WG = 0
+        # WG = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=tensor_flatten_real_images)
+        print(WG)
+        
         # Compute LP
-        prior_samples = prior_distribution(num_images).to(device)
-        LP = compute_true_Wasserstein(X=tensor_encoded_images, Y=prior_samples)
-
+        LP = 0
+        # prior_samples = prior_distribution(num_images)
+        # LP = compute_true_Wasserstein(X=tensor_encoded_images, Y=prior_samples)
+        print(LP)
+        
         # Compute F and AD in latent space
         F, AD = compute_F_AD(list_features=tensor_encoded_images,
                              list_labels=tensor_labels,
                              prior_distribution=prior_distribution,
                              num_classes=args.num_classes,
-                             device=device)
-
+                             device="cpu")
+        print(F, AD)
+        
         # Compute F and AD in image space
         F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
+                                                                                      tensor_flatten_real_images=tensor_real_images.reshape(total_images, -1),
                                                                                       prior_distribution=prior_distribution,
-                                                                                      tensor_flatten_real_images=tensor_flatten_real_images,
                                                                                       tensor_labels=tensor_labels,
                                                                                       num_classes=args.num_classes,
-                                                                                      device=device)
-
+                                                                                      device="cpu")
+        print(F_images, AD_images)
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)
         WG = convert_to_cpu_number(WG)
@@ -117,5 +114,6 @@ def ultimate_evaluation(args,
         AD = convert_to_cpu_number(AD)
         F_images = convert_to_cpu_number(F_images)
         AD_images = convert_to_cpu_number(AD_images)
-
+        
+        model.to(device)
         return RL, LP, WG, F, AD, F_images, AD_images

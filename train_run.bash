@@ -1,15 +1,14 @@
 #!/bin/bash
-
 # Define methods
 methods=(EFBSW FBSW lowerboundFBSW BSW None)
 
 # Loop through each method
 for method in "${methods[@]}"; do
-    python3 train.py \
-        --lr 0.0001 \
-        --epochs 1000 \
-        --batch-size 500 \
-        --batch-size-test 128 \
+    CUDA_VISIBLE_DEVICES=2 python3 train.py \
+        --lr 0.0005 \
+        --epochs 500 \
+        --batch-size 1000 \
+        --batch-size-test 500 \
         --log-epoch-interval 20 \
         --dataset mnist \
         --datadir data \
