@@ -50,7 +50,6 @@ def main():
                         help='hyper-parameter of OBSW method')
     parser.add_argument('--checkpoint-period', type=int, default=100, metavar='S',
                         help='checkpoint period (100, 200, 300)')
-    mà
     
     args = parser.parse_args()
     
@@ -121,7 +120,7 @@ def main():
     }
     
     with torch.no_grad():
-        for i in checkpoint_periods:
+        for epoch in checkpoint_periods:
             
             if i != 300:
                 output_file = f'{args.outdir}/evaluate_epoch_{i}_{args.method}.log'
@@ -131,10 +130,12 @@ def main():
             F, W, FI, WI, RL = extract_values(output_file)
             mean_F = np.mean(F)
             mean_W = np.mean(W)
+            mean_F = "{:.3f}".format(mean_F)
+            mean_W = "{:.3f}".format(mean_W)
             
             pretrained_model_path = f"{outdir_checkpoint}/epoch_{i}/model/{args.dataset}_{args.method}.pth"
             print(model)
-            model.load_state_dict(torch.load(pretrained_model_path))
+            model.load_state_dict(torch.load(pretrained_model_path, map_location=torch.device('cpu')))
             
             test_encode, test_targets = list(), list()
             for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
@@ -146,7 +147,7 @@ def main():
             test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
             print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
             
-            print('{}/test_latent.png'.format(f"{outdir_checkpoint}/epoch_{i}"))
+            print('{}/test_latent.png'.format(f"{outdir_checkpoint}/epoch_{epoch}"))
             
             if args.dataset == "mnist":
                 plt.figure(figsize=(10, 10))
@@ -154,17 +155,18 @@ def main():
                 colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
                 for i, class_label in enumerate(classes):
                     plt.scatter(test_encode[test_targets == class_label, 0],
-                                -test_encode[test_targets == class_label, 1],
+                                test_encode[test_targets == class_label, 1],
                                 c=[colors[i]],
                                 cmap=plt.cm.Spectral,
                                 label=class_label,
-                                alpha=0.7)
+                                alpha=0.2)
+                                # s=20)
                 plt.rc('text', usetex=True)
                 plt.legend()
                 title = f'{METHOD_NAME[args.method]}, F={mean_F}, W={mean_W}'
                 plt.title(title)
-                plt.title(title, fontsize=16)
-                plt.savefig('{}/test_latent.png'.format(f"{outdir_checkpoint}/epoch_{i}"))
+                plt.title(title, fontsize=20)
+                plt.savefig('{}/test_latent.png'.format(f"{outdir_checkpoint}/epoch_{epoch}"))
                 plt.close()
                 
             elif args.dataset == "cifar10":
@@ -179,14 +181,14 @@ def main():
                                 c=[colors[i]],
                                 cmap=plt.cm.Spectral,
                                 label=class_label,
-                                alpha=0.7)
+                                alpha=0.3)
                           
                 plt.rc('text', usetex=True)
                 plt.legend()
                 title = f'{METHOD_NAME[args.method]}, F={mean_F}, W={mean_W}'
                 plt.title(title)
-                plt.title(title, fontsize=16)
-                plt.savefig('{}/test_latent.png'.format(f"{outdir_checkpoint}/epoch_{i}"))
+                plt.title(title, fontsize=20)
+                plt.savefig('{}/test_latent.png'.format(f"{outdir_checkpoint}/epoch_{epoch}"))
                 plt.close()
 
 if __name__ == "__main__":

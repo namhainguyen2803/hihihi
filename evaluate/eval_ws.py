@@ -82,13 +82,13 @@ def ultimate_evaluation(args,
         
         # Compute WG
         WG = 0
-        # WG = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=tensor_flatten_real_images)
+        WG = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=tensor_flatten_real_images)
         print(WG)
         
         # Compute LP
         LP = 0
-        # prior_samples = prior_distribution(num_images)
-        # LP = compute_true_Wasserstein(X=tensor_encoded_images, Y=prior_samples)
+        prior_samples = prior_distribution(num_images)
+        LP = compute_true_Wasserstein(X=tensor_encoded_images, Y=prior_samples)
         print(LP)
         
         # Compute F and AD in latent space
