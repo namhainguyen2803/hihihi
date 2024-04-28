@@ -84,7 +84,7 @@ def ultimate_evaluate_fid(args,
         # Compute WG
         WG = 0
         real_images_path = "stats/cifar10/ground_truth.npz"
-        # WG = compute_WG(stat_gen_path, real_images_path)
+        WG = compute_WG(stat_gen_path, real_images_path)
         print(f"WG: {WG}")
 
         # Compute LP

@@ -37,9 +37,9 @@ def extract_values(log_path):
 
 if __name__ == "__main__":
     RESULT = ["result3"]
-    DATASET = ["cifar10"]
+    DATASET = ["mnist"]
     SEED = ["seed_42"]
-    LR = ["lr_0.0005"]
+    LR = ["lr_0.001"]
     FSW = ["fsw_0.1", "fsw_0.5", "fsw_1.0", "fsw_2.0", "fsw_4.0"]
     METHOD = ["EFBSW", "FBSW", "lowerboundFBSW", "OBSW_0.1","OBSW", "OBSW_10.0", "BSW"]
     # METHOD = ["EFBSW"]
@@ -56,9 +56,9 @@ if __name__ == "__main__":
                             log_path = f"{r}/{d}/{s}/{l}/{f}/{m}/evaluate_{m}.log"
                             F, AD, FI, ADI, RL = extract_values(log_path)
 
-                            res_method_latex += f" & ${calculate_mean_std(FI[-3:])}$ & ${calculate_mean_std(ADI[-3:])}$"
+                            res_method_latex += f" & ${calculate_mean_std(F[-3:])}$ & ${calculate_mean_std(AD[-3:])}$ & " + "{:.3f}".format(RL[-1])
                             
-                            # print(f"==> {log_path}, {len(RL[-4:])}, {len(set(RL[-4:]))}")
+                            # print(f"==> {log_path}, {len(RL[:])}, {len(set(RL[:]))}")
                         
                         res_method_latex += "\\\\"
                         print(res_method_latex)

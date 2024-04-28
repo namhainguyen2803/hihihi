@@ -62,6 +62,8 @@ def main():
                         help='random seed (default: 7)')
     parser.add_argument('--lambda-obsw', type=float, default=1, metavar='OBSW',
                         help='hyper-parameter of OBSW method')
+    parser.add_argument('--checkpoint-period', type=int, default=100, metavar='S',
+                        help='checkpoint period (100, 200, 300)')
     args = parser.parse_args()
     
     if args.method == "OBSW" and args.lambda_obsw != 1:
