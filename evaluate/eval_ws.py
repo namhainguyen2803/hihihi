@@ -82,7 +82,11 @@ def ultimate_evaluation(args,
         
         # Compute WG
         WG = 0
-        WG = compute_true_Wasserstein(X=tensor_flatten_generated_images, Y=tensor_flatten_real_images)
+        tensor_generated_images = generate_image(model=model,
+                                                 prior_distribution=prior_distribution,
+                                                 num_images=total_images,
+                                                 device=device)
+        WG = compute_true_Wasserstein(X=tensor_generated_images.reshape(total_images, -1), Y=tensor_real_images.reshape(total_images, -1))
         print(WG)
         
         # Compute LP
