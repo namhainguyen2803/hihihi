@@ -144,7 +144,10 @@ def main():
             assert os.path.isfile(pretrained_model_path) == True, f"not exist {pretrained_model_path}"
             output_file = f'{args.outdir}/evaluate_epoch_{i}_{args.method}.log'
             print(model)
-            model.load_state_dict(torch.load(pretrained_model_path))
+            if device == "cpu":
+                model.load_state_dict(torch.load(pretrained_model_path, map_location=torch.device('cpu')))
+            else:
+                model.load_state_dict(torch.load(pretrained_model_path))
             RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
                                                                         model=model,
                                                                         test_loader=test_loader,
