@@ -120,7 +120,7 @@ result*/
 images/
 images3/
 trash/
-*.bash
+# *.bash
 classify_image_graph_def.pb
 stats/
 data/

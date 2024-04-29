@@ -95,8 +95,8 @@ def ultimate_evaluation(args,
         list_chosen_real_images = list()
         list_chosen_encoded_images = list()
         for i in range(args.num_classes):
-            cls_data = tensor_real_images[tensor_labels == i][:2000]
-            cls_encode = tensor_encoded_images[tensor_labels == i][:2000]
+            cls_data = tensor_real_images[tensor_labels == i][:1000]
+            cls_encode = tensor_encoded_images[tensor_labels == i][:1000]
             list_chosen_real_images.append(cls_data)
             list_chosen_encoded_images.append(cls_encode)
         
