@@ -83,6 +83,7 @@ def ultimate_evaluation(args,
         RL = RL / total_images
         print(RL)
         
+        F_RL = 0
         list_class_RL = list()
         for cls in range(args.num_classes):
             x = tensor_real_images[tensor_labels == cls]
@@ -90,7 +91,6 @@ def ultimate_evaluation(args,
             class_RL = torch.nn.functional.binary_cross_entropy(x, x_recon)
             list_class_RL.append(class_RL)
         F_RL = compute_fairness(list_class_RL)
-        W_RL = compute_averaging_distance(list_class_RL)
         
         list_chosen_real_images = list()
         list_chosen_encoded_images = list()
@@ -100,45 +100,47 @@ def ultimate_evaluation(args,
             list_chosen_real_images.append(cls_data)
             list_chosen_encoded_images.append(cls_encode)
         
-        tensor_real_images = torch.cat(list_chosen_real_images, dim=0)
-        tensor_encoded_images = torch.cat(list_chosen_encoded_images, dim=0)
+        tensor_chosen_real_images = torch.cat(list_chosen_real_images, dim=0)
+        tensor_chosen_encoded_images = torch.cat(list_chosen_encoded_images, dim=0)
         
         print(tensor_real_images.shape, tensor_encoded_images.shape)
-        total_images = tensor_real_images.shape[0]
+        print(tensor_chosen_real_images.shape, tensor_chosen_encoded_images.shape)
+        num_chosen_images = tensor_chosen_real_images.shape[0]
+        
         # Compute WG
         WG = 0
         tensor_generated_images = generate_image(model=model,
                                                  prior_distribution=prior_distribution,
-                                                 num_images=total_images,
+                                                 num_images=num_chosen_images,
                                                  device="cpu")
-        WG = compute_true_Wasserstein(X=tensor_generated_images.reshape(total_images, -1), Y=tensor_real_images.reshape(total_images, -1))
+        WG = compute_true_Wasserstein(X=tensor_generated_images.reshape(num_chosen_images, -1), Y=tensor_chosen_real_images.reshape(num_chosen_images, -1))
         print(WG)
         
         # Compute LP
         LP = 0
-        prior_samples = prior_distribution(total_images)
-        LP = compute_true_Wasserstein(X=tensor_encoded_images, Y=prior_samples)
+        prior_samples = prior_distribution(num_chosen_images)
+        LP = compute_true_Wasserstein(X=tensor_chosen_encoded_images, Y=prior_samples)
         print(LP)
         
         # Compute F and AD in latent space
         F = 0
         AD = 0
-        # F, AD = compute_F_AD(list_features=tensor_encoded_images,
-        #                      list_labels=tensor_labels,
-        #                      prior_distribution=prior_distribution,
-        #                      num_classes=args.num_classes,
-        #                      device="cpu")
+        F, AD = compute_F_AD(list_features=tensor_encoded_images,
+                             list_labels=tensor_labels,
+                             prior_distribution=prior_distribution,
+                             num_classes=args.num_classes,
+                             device="cpu")
         print(F, AD)
         
         # Compute F and AD in image space
         F_images = 0
         AD_images = 0
-        # F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
-        #                                                                               tensor_flatten_real_images=tensor_real_images.reshape(total_images, -1),
-        #                                                                               prior_distribution=prior_distribution,
-        #                                                                               tensor_labels=tensor_labels,
-        #                                                                               num_classes=args.num_classes,
-        #                                                                               device="cpu")
+        F_images, AD_images = compute_fairness_and_averaging_distance_in_images_space(model=model,
+                                                                                      tensor_flatten_real_images=tensor_real_images.reshape(total_images, -1),
+                                                                                      prior_distribution=prior_distribution,
+                                                                                      tensor_labels=tensor_labels,
+                                                                                      num_classes=args.num_classes,
+                                                                                      device="cpu")
         print(F_images, AD_images)
         RL = convert_to_cpu_number(RL)
         LP = convert_to_cpu_number(LP)
@@ -149,4 +151,4 @@ def ultimate_evaluation(args,
         AD_images = convert_to_cpu_number(AD_images)
         
         model.to(device)
-        return RL, LP, WG, F, AD, F_images, AD_images, F_RL, W_RL
+        return RL, LP, WG, F, AD, F_images, AD_images, F_RL

@@ -1,0 +1,151 @@
+\begin{table}[H]
+    \centering
+    \caption{\footnotesize{F-metric and W-metric in latent space on MNIST dataset evaluated after 100 epochs.}}
+     \vskip -0.05in
+    \scalebox{0.55}{
+    \begin{tabular}{l|cc|cc|cc|cc|cc|}
+    \toprule
+     \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\kappa_2=0.1$} & \multicolumn{2}{c|}{$\kappa_2=0.5$} & \multicolumn{2}{c|}{$\kappa_2=1.0$} & \multicolumn{2}{c|}{$\kappa_2=2.0$} & \multicolumn{2}{c|}{$\kappa_2=4.0$} \\
+     \cmidrule{2-11}
+    & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) \\
+     \midrule
+USWB & $0.203 \pm 0.001$ & $0.284 \pm 0.001$ & $0.077 \pm 0.001$ & $0.129 \pm 0.000$ & $0.045 \pm 0.000$ & $0.079 \pm 0.000$ & $0.028 \pm 0.000$ & $0.055 \pm 0.000$ & $0.028 \pm 0.000$ & $0.042 \pm 0.000$\\
+MFSWB $\lambda = 10.0$ & $0.187 \pm 0.001$ & $0.349 \pm 0.001$ & $0.230 \pm 0.002$ & $0.387 \pm 0.001$ & $0.195 \pm 0.001$ & $0.298 \pm 0.001$ & $0.195 \pm 0.002$ & $0.377 \pm 0.002$ & $0.190 \pm 0.003$ & $0.364 \pm 0.002$\\
+MFSWB $\lambda = 1.0$ & $0.167 \pm 0.003$ & $0.326 \pm 0.002$ & $0.134 \pm 0.001$ & $0.378 \pm 0.001$ & $0.113 \pm 0.002$ & $0.289 \pm 0.001$ & $0.066 \pm 0.003$ & $0.302 \pm 0.001$ & $0.076 \pm 0.001$ & $0.282 \pm 0.001$\\
+MFSWB $\lambda = 0.1$ & $0.202 \pm 0.001$ & $0.331 \pm 0.001$ & $0.198 \pm 0.002$ & $0.347 \pm 0.002$ & $0.231 \pm 0.001$ & $0.369 \pm 0.003$ & $0.168 \pm 0.002$ & $0.348 \pm 0.001$ & $0.201 \pm 0.002$ & $0.375 \pm 0.001$\\
+s-MFSWB & $0.053 \pm 0.001$ & $0.232 \pm 0.001$ & $0.023 \pm 0.001$ & $0.124 \pm 0.000$ & $0.014 \pm 0.000$ & $0.098 \pm 0.000$ & $0.009 \pm 0.000$ & $0.047 \pm 0.000$ & $0.008 \pm 0.000$ & $0.020 \pm 0.000$\\
+us-MFSWB & $0.050 \pm 0.001$ & $0.195 \pm 0.000$ & $0.020 \pm 0.000$ & $0.095 \pm 0.000$ & $0.017 \pm 0.000$ & $0.056 \pm 0.000$ & $0.014 \pm 0.000$ & $0.035 \pm 0.000$ & $0.010 \pm 0.000$ & $0.020 \pm 0.000$\\
+es-MFSWB & $0.065 \pm 0.000$ & $0.226 \pm 0.000$ & $0.015 \pm 0.000$ & $0.105 \pm 0.001$ & $0.020 \pm 0.000$ & $0.064 \pm 0.000$ & $0.014 \pm 0.000$ & $0.047 \pm 0.000$ & $0.007 \pm 0.000$ & $0.016 \pm 0.000$\\
+    \bottomrule
+    \end{tabular}
+}
+    \label{tab:mnist_latent}
+    \vskip -0.1in
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{\footnotesize{F-metric and W-metric in image space on MNIST dataset evaluated after 100 epochs.}}
+     \vskip -0.05in
+    \scalebox{0.55}{
+    \begin{tabular}{l|cc|cc|cc|cc|cc|}
+    \toprule
+     \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\kappa_2=0.1$} & \multicolumn{2}{c|}{$\kappa_2=0.5$} & \multicolumn{2}{c|}{$\kappa_2=1.0$} & \multicolumn{2}{c|}{$\kappa_2=2.0$} & \multicolumn{2}{c|}{$\kappa_2=4.0$} \\
+     \cmidrule{2-11}
+    & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) \\
+     \midrule
+USWB & $7.305 \pm 0.048$ & $53.604 \pm 0.060$ & $7.810 \pm 0.046$ & $52.240 \pm 0.051$ & $8.797 \pm 0.036$ & $51.618 \pm 0.008$ & $7.387 \pm 0.027$ & $51.478 \pm 0.051$ & $7.729 \pm 0.010$ & $47.446 \pm 0.015$\\
+MFSWB $\lambda = 10.0$ & $7.752 \pm 0.055$ & $53.596 \pm 0.051$ & $7.894 \pm 0.119$ & $52.670 \pm 0.024$ & $8.274 \pm 0.042$ & $52.330 \pm 0.021$ & $7.941 \pm 0.109$ & $52.943 \pm 0.068$ & $7.959 \pm 0.036$ & $52.600 \pm 0.036$\\
+MFSWB $\lambda = 1.0$ & $7.522 \pm 0.142$ & $53.830 \pm 0.065$ & $7.678 \pm 0.061$ & $54.225 \pm 0.022$ & $6.974 \pm 0.076$ & $57.879 \pm 0.057$ & $10.040 \pm 0.062$ & $57.789 \pm 0.027$ & $10.877 \pm 0.076$ & $61.201 \pm 0.041$\\
+MFSWB $\lambda = 0.1$ & $7.892 \pm 0.015$ & $53.675 \pm 0.068$ & $8.356 \pm 0.031$ & $53.722 \pm 0.031$ & $7.390 \pm 0.043$ & $52.364 \pm 0.029$ & $8.046 \pm 0.094$ & $53.188 \pm 0.037$ & $7.307 \pm 0.094$ & $53.432 \pm 0.086$\\
+s-MFSWB & $7.620 \pm 0.036$ & $53.460 \pm 0.092$ & $7.125 \pm 0.047$ & $53.261 \pm 0.036$ & $7.372 \pm 0.076$ & $51.068 \pm 0.010$ & $7.233 \pm 0.036$ & $49.075 \pm 0.044$ & $7.381 \pm 0.091$ & $46.906 \pm 0.024$\\
+us-MFSWB & $7.258 \pm 0.018$ & $52.712 \pm 0.093$ & $7.579 \pm 0.124$ & $51.447 \pm 0.102$ & $8.003 \pm 0.084$ & $49.835 \pm 0.063$ & $7.644 \pm 0.067$ & $49.267 \pm 0.061$ & $8.237 \pm 0.027$ & $46.616 \pm 0.010$\\
+es-MFSWB & $7.561 \pm 0.061$ & $52.689 \pm 0.080$ & $7.761 \pm 0.097$ & $51.403 \pm 0.043$ & $7.515 \pm 0.083$ & $51.157 \pm 0.083$ & $6.652 \pm 0.116$ & $50.314 \pm 0.059$ & $8.904 \pm 0.050$ & $47.308 \pm 0.017$\\
+    \bottomrule
+    \end{tabular}
+}
+    \label{tab:mnist_image}
+    \vskip -0.1in
+\end{table}
+
+
+\begin{table}[H]
+    \centering
+    \caption{\footnotesize{F-metric and W-metric in latent space on MNIST dataset evaluated after 200 epochs.}}
+     \vskip -0.05in
+    \scalebox{0.55}{
+    \begin{tabular}{l|cc|cc|cc|cc|cc|}
+    \toprule
+     \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\kappa_2=0.1$} & \multicolumn{2}{c|}{$\kappa_2=0.5$} & \multicolumn{2}{c|}{$\kappa_2=1.0$} & \multicolumn{2}{c|}{$\kappa_2=2.0$} & \multicolumn{2}{c|}{$\kappa_2=4.0$} \\
+     \cmidrule{2-11}
+    & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) \\
+     \midrule
+USWB & $0.186 \pm 0.003$ & $0.276 \pm 0.000$ & $0.072 \pm 0.001$ & $0.128 \pm 0.000$ & $0.041 \pm 0.001$ & $0.077 \pm 0.000$ & $0.025 \pm 0.000$ & $0.056 \pm 0.000$ & $0.023 \pm 0.000$ & $0.043 \pm 0.000$\\
+MFSWB $\lambda = 10.0$ & $0.189 \pm 0.003$ & $0.361 \pm 0.002$ & $0.190 \pm 0.002$ & $0.356 \pm 0.002$ & $0.200 \pm 0.002$ & $0.315 \pm 0.001$ & $0.174 \pm 0.002$ & $0.361 \pm 0.002$ & $0.195 \pm 0.001$ & $0.370 \pm 0.002$\\
+MFSWB $\lambda = 1.0$ & $0.170 \pm 0.001$ & $0.353 \pm 0.001$ & $0.141 \pm 0.000$ & $0.384 \pm 0.002$ & $0.102 \pm 0.002$ & $0.290 \pm 0.001$ & $0.073 \pm 0.001$ & $0.306 \pm 0.001$ & $0.073 \pm 0.001$ & $0.284 \pm 0.000$\\
+MFSWB $\lambda = 0.1$ & $0.188 \pm 0.001$ & $0.326 \pm 0.001$ & $0.191 \pm 0.003$ & $0.352 \pm 0.001$ & $0.204 \pm 0.003$ & $0.355 \pm 0.002$ & $0.174 \pm 0.001$ & $0.364 \pm 0.003$ & $0.187 \pm 0.002$ & $0.384 \pm 0.003$\\
+s-MFSWB & $0.041 \pm 0.002$ & $0.219 \pm 0.001$ & $0.021 \pm 0.001$ & $0.121 \pm 0.000$ & $0.013 \pm 0.000$ & $0.090 \pm 0.000$ & $0.009 \pm 0.000$ & $0.051 \pm 0.000$ & $0.013 \pm 0.000$ & $0.027 \pm 0.000$\\
+us-MFSWB & $0.034 \pm 0.001$ & $0.190 \pm 0.001$ & $0.021 \pm 0.001$ & $0.093 \pm 0.000$ & $0.015 \pm 0.000$ & $0.055 \pm 0.000$ & $0.012 \pm 0.000$ & $0.040 \pm 0.000$ & $0.013 \pm 0.000$ & $0.024 \pm 0.000$\\
+es-MFSWB & $0.060 \pm 0.001$ & $0.220 \pm 0.001$ & $0.015 \pm 0.001$ & $0.106 \pm 0.000$ & $0.017 \pm 0.000$ & $0.069 \pm 0.000$ & $0.013 \pm 0.000$ & $0.051 \pm 0.000$ & $0.011 \pm 0.000$ & $0.020 \pm 0.000$\\
+    \bottomrule
+    \end{tabular}
+}
+    \label{tab:mnist_latent}
+    \vskip -0.1in
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{\footnotesize{F-metric and W-metric in image space on MNIST dataset evaluated after 200 epochs.}}
+     \vskip -0.05in
+    \scalebox{0.55}{
+    \begin{tabular}{l|cc|cc|cc|cc|cc|}
+    \toprule
+     \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\kappa_2=0.1$} & \multicolumn{2}{c|}{$\kappa_2=0.5$} & \multicolumn{2}{c|}{$\kappa_2=1.0$} & \multicolumn{2}{c|}{$\kappa_2=2.0$} & \multicolumn{2}{c|}{$\kappa_2=4.0$} \\
+     \cmidrule{2-11}
+    & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) \\
+     \midrule
+USWB & $7.161 \pm 0.127$ & $53.551 \pm 0.032$ & $7.617 \pm 0.063$ & $52.876 \pm 0.041$ & $8.292 \pm 0.086$ & $52.176 \pm 0.056$ & $7.613 \pm 0.072$ & $50.970 \pm 0.078$ & $8.050 \pm 0.017$ & $49.568 \pm 0.110$\\
+MFSWB $\lambda = 10.0$ & $7.736 \pm 0.083$ & $52.468 \pm 0.014$ & $7.810 \pm 0.082$ & $53.621 \pm 0.039$ & $8.077 \pm 0.081$ & $52.956 \pm 0.030$ & $7.736 \pm 0.024$ & $53.409 \pm 0.018$ & $7.796 \pm 0.039$ & $53.607 \pm 0.094$\\
+MFSWB $\lambda = 1.0$ & $7.712 \pm 0.065$ & $52.526 \pm 0.023$ & $8.085 \pm 0.048$ & $54.481 \pm 0.022$ & $6.979 \pm 0.093$ & $58.866 \pm 0.062$ & $10.342 \pm 0.029$ & $62.825 \pm 0.057$ & $9.813 \pm 0.060$ & $62.470 \pm 0.014$\\
+MFSWB $\lambda = 0.1$ & $8.202 \pm 0.071$ & $54.152 \pm 0.099$ & $7.497 \pm 0.155$ & $53.478 \pm 0.027$ & $6.912 \pm 0.082$ & $53.814 \pm 0.065$ & $8.025 \pm 0.060$ & $53.815 \pm 0.069$ & $7.926 \pm 0.066$ & $53.527 \pm 0.016$\\
+s-MFSWB & $6.953 \pm 0.065$ & $52.638 \pm 0.010$ & $7.086 \pm 0.022$ & $51.938 \pm 0.082$ & $7.337 \pm 0.073$ & $51.150 \pm 0.019$ & $6.748 \pm 0.042$ & $48.854 \pm 0.047$ & $9.139 \pm 0.117$ & $48.409 \pm 0.012$\\
+us-MFSWB & $7.244 \pm 0.065$ & $51.950 \pm 0.032$ & $6.325 \pm 0.009$ & $52.951 \pm 0.092$ & $8.833 \pm 0.045$ & $50.763 \pm 0.059$ & $8.194 \pm 0.031$ & $49.835 \pm 0.023$ & $7.189 \pm 0.059$ & $46.953 \pm 0.022$\\
+es-MFSWB & $7.978 \pm 0.061$ & $53.875 \pm 0.025$ & $7.150 \pm 0.160$ & $51.892 \pm 0.032$ & $6.966 \pm 0.023$ & $51.462 \pm 0.057$ & $6.783 \pm 0.028$ & $50.216 \pm 0.059$ & $7.625 \pm 0.084$ & $47.651 \pm 0.027$\\
+    \bottomrule
+    \end{tabular}
+}
+    \label{tab:mnist_image}
+    \vskip -0.1in
+\end{table}
+
+
+\begin{table}[H]
+    \centering
+    \caption{\footnotesize{F-metric and W-metric in latent space on MNIST dataset evaluated after 300 epochs.}}
+     \vskip -0.05in
+    \scalebox{0.55}{
+    \begin{tabular}{l|cc|cc|cc|cc|cc|}
+    \toprule
+     \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\kappa_2=0.1$} & \multicolumn{2}{c|}{$\kappa_2=0.5$} & \multicolumn{2}{c|}{$\kappa_2=1.0$} & \multicolumn{2}{c|}{$\kappa_2=2.0$} & \multicolumn{2}{c|}{$\kappa_2=4.0$} \\
+     \cmidrule{2-11}
+    & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) & \( F_{\text{latent}} \) ($\downarrow$) & \( W_{\text{latent}} \) ($\downarrow$) \\
+     \midrule
+USWB & $0.170 \pm 0.001$ & $0.263 \pm 0.001$ & $0.064 \pm 0.001$ & $0.121 \pm 0.000$ & $0.037 \pm 0.000$ & $0.078 \pm 0.000$ & $0.025 \pm 0.001$ & $0.058 \pm 0.000$ & $0.016 \pm 0.000$ & $0.040 \pm 0.000$\\
+MFSWB $\lambda = 0.1$ & $0.224 \pm 0.002$ & $0.359 \pm 0.002$ & $0.197 \pm 0.001$ & $0.360 \pm 0.001$ & $0.199 \pm 0.002$ & $0.353 \pm 0.001$ & $0.177 \pm 0.001$ & $0.365 \pm 0.002$ & $0.185 \pm 0.001$ & $0.374 \pm 0.001$\\
+MFSWB $\lambda = 1.0$ & $0.159 \pm 0.003$ & $0.348 \pm 0.001$ & $0.131 \pm 0.001$ & $0.370 \pm 0.001$ & $0.102 \pm 0.002$ & $0.284 \pm 0.000$ & $0.073 \pm 0.002$ & $0.303 \pm 0.002$ & $0.070 \pm 0.001$ & $0.282 \pm 0.001$\\
+MFSWB $\lambda = 10.0$ & $0.194 \pm 0.002$ & $0.369 \pm 0.001$ & $0.197 \pm 0.001$ & $0.365 \pm 0.001$ & $0.201 \pm 0.001$ & $0.317 \pm 0.000$ & $0.184 \pm 0.002$ & $0.377 \pm 0.000$ & $0.185 \pm 0.002$ & $0.366 \pm 0.001$\\
+s-MFSWB & $0.039 \pm 0.000$ & $0.220 \pm 0.001$ & $0.022 \pm 0.000$ & $0.119 \pm 0.001$ & $0.011 \pm 0.001$ & $0.092 \pm 0.000$ & $0.010 \pm 0.001$ & $0.053 \pm 0.000$ & $0.009 \pm 0.000$ & $0.030 \pm 0.000$\\
+us-MFSWB & $0.034 \pm 0.000$ & $0.186 \pm 0.001$ & $0.020 \pm 0.001$ & $0.087 \pm 0.001$ & $0.014 \pm 0.000$ & $0.056 \pm 0.000$ & $0.012 \pm 0.001$ & $0.049 \pm 0.000$ & $0.011 \pm 0.000$ & $0.027 \pm 0.000$\\
+es-MFSWB & $0.053 \pm 0.001$ & $0.216 \pm 0.001$ & $0.017 \pm 0.000$ & $0.102 \pm 0.001$ & $0.015 \pm 0.000$ & $0.063 \pm 0.000$ & $0.015 \pm 0.000$ & $0.053 \pm 0.000$ & $0.010 \pm 0.000$ & $0.022 \pm 0.000$\\
+    \bottomrule
+    \end{tabular}
+}
+    \label{tab:mnist_latent}
+    \vskip -0.1in
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{\footnotesize{F-metric and W-metric in image space on MNIST dataset evaluated after 300 epochs.}}
+     \vskip -0.05in
+    \scalebox{0.55}{
+    \begin{tabular}{l|cc|cc|cc|cc|cc|}
+    \toprule
+     \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\kappa_2=0.1$} & \multicolumn{2}{c|}{$\kappa_2=0.5$} & \multicolumn{2}{c|}{$\kappa_2=1.0$} & \multicolumn{2}{c|}{$\kappa_2=2.0$} & \multicolumn{2}{c|}{$\kappa_2=4.0$} \\
+     \cmidrule{2-11}
+    & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) & \( F_{\text{image}} \) ($\downarrow$) & \( W_{\text{image}} \) ($\downarrow$) \\
+     \midrule
+USWB & $7.302 \pm 0.153$ & $53.665 \pm 0.046$ & $7.350 \pm 0.049$ & $52.332 \pm 0.049$ & $8.504 \pm 0.067$ & $52.425 \pm 0.091$ & $7.678 \pm 0.024$ & $51.964 \pm 0.065$ & $7.721 \pm 0.077$ & $50.156 \pm 0.048$\\
+MFSWB $\lambda = 0.1$ & $8.009 \pm 0.074$ & $53.581 \pm 0.105$ & $7.426 \pm 0.098$ & $53.457 \pm 0.053$ & $7.384 \pm 0.053$ & $53.554 \pm 0.031$ & $7.550 \pm 0.115$ & $53.126 \pm 0.053$ & $7.767 \pm 0.098$ & $53.610 \pm 0.054$\\
+MFSWB $\lambda = 1.0$ & $7.233 \pm 0.015$ & $53.501 \pm 0.033$ & $7.380 \pm 0.038$ & $55.089 \pm 0.051$ & $6.757 \pm 0.074$ & $58.880 \pm 0.063$ & $10.563 \pm 0.089$ & $63.733 \pm 0.082$ & $9.461 \pm 0.032$ & $63.940 \pm 0.066$\\
+MFSWB $\lambda = 10.0$ & $7.174 \pm 0.140$ & $53.895 \pm 0.074$ & $7.265 \pm 0.116$ & $54.423 \pm 0.139$ & $7.803 \pm 0.049$ & $53.353 \pm 0.078$ & $7.569 \pm 0.077$ & $53.538 \pm 0.043$ & $7.491 \pm 0.115$ & $53.418 \pm 0.126$\\
+s-MFSWB & $7.703 \pm 0.148$ & $53.017 \pm 0.039$ & $6.702 \pm 0.074$ & $53.484 \pm 0.034$ & $7.495 \pm 0.147$ & $51.450 \pm 0.018$ & $7.081 \pm 0.055$ & $50.560 \pm 0.049$ & $7.099 \pm 0.083$ & $48.483 \pm 0.014$\\
+us-MFSWB & $7.120 \pm 0.075$ & $53.423 \pm 0.122$ & $6.794 \pm 0.087$ & $53.471 \pm 0.048$ & $7.320 \pm 0.044$ & $51.980 \pm 0.059$ & $7.813 \pm 0.061$ & $49.813 \pm 0.035$ & $7.102 \pm 0.039$ & $47.810 \pm 0.033$\\
+es-MFSWB & $7.441 \pm 0.073$ & $54.187 \pm 0.055$ & $7.608 \pm 0.056$ & $52.122 \pm 0.097$ & $7.339 \pm 0.055$ & $51.718 \pm 0.050$ & $7.070 \pm 0.112$ & $50.712 \pm 0.063$ & $7.213 \pm 0.029$ & $48.090 \pm 0.050$\\
+    \bottomrule
+    \end{tabular}
+}
+    \label{tab:mnist_image}
+    \vskip -0.1in
+\end{table}

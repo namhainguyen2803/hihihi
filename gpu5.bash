@@ -1,4 +1,4 @@
-weight_fsw_values=(0.1)
+weight_fsw_values=(0.5)
 methods=(EFBSW FBSW lowerboundFBSW OBSW BSW)
 obsw_weights=(0.1 10.0)
 gpu_id=6

@@ -1,0 +1,14 @@
+\begin{table}[H]
+\footnotesize
+\centering
+\caption{Comparison of methods with $\kappa_2 =0.0$ on MNIST after 100 epochs.}
+\label{tab:mnist_0.0_100}
+\begin{tabular}{@{}ccccccccc@{}}
+\toprule
+Metric & RL & $\text{F}_{\text{rec}}$ & $\text{WD}_{\text{latent}} \times 10^3$ & $\text{F}_{\text{latent}}$ & $\text{W}_{\text{latent}}$ & $\text{WD}_{\text{image}}$ & $\text{F}_{\text{image}}$ & $\text{W}_{\text{image}}$ \\
+\midrule
+None & 3.127& 0.000& 0.000& 0.185& 0.367 & 0.000& 8.577& 51.919\\
+
+\bottomrule
+\end{tabular}
+\end{table}

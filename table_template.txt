@@ -1,0 +1,13 @@
+\begin{table}[H]
+\footnotesize
+\centering
+\caption{Comparison of methods with $\kappa_2 =@FSW$ on MNIST after @EPOCHS epochs.}
+\label{tab:mnist_@FSW_@EPOCHS}
+\begin{tabular}{@{}ccccccccc@{}}
+\toprule
+Metric & RL & $\text{F}_{\text{rec}}$ & $\text{WD}_{\text{latent}} \times 10^3$ & $\text{F}_{\text{latent}}$ & $\text{W}_{\text{latent}}$ & $\text{WD}_{\text{image}}$ & $\text{F}_{\text{image}}$ & $\text{W}_{\text{image}}$ \\
+\midrule
+@DATA
+\bottomrule
+\end{tabular}
+\end{table}

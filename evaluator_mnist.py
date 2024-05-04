@@ -142,21 +142,21 @@ def main():
             check_path = os.path.isfile(pretrained_model_path)
             print(f"Check if pretrained model path {pretrained_model_path} exit or not: {check_path}")
             assert os.path.isfile(pretrained_model_path) == True, f"not exist {pretrained_model_path}"
-            output_file = f'{args.outdir}/evaluate_epoch_{i}_{args.method}.log'
+            output_file = f'{args.outdir}/evaluate_epoch_{i}_{args.method}_final.log'
             print(model)
             if device == "cpu":
                 model.load_state_dict(torch.load(pretrained_model_path, map_location=torch.device('cpu')))
             else:
-                model.load_state_dict(torch.load(pretrained_model_path, map_location=torch.device('cpu')))
+                model.load_state_dict(torch.load(pretrained_model_path))
             
             if args.dataset == "mnist":
-                RL, LP, WG, F, AD, F_images, AD_images, F_RL, W_RL = ultimate_evaluation(args=args,
+                RL, LP, WG, F, AD, F_images, AD_images, F_RL = ultimate_evaluation(args=args,
                                                                             model=model,
                                                                             test_loader=test_loader,
                                                                             prior_distribution=distribution_fn,
                                                                             device=device)
             else:
-                RL, LP, WG, F, AD, F_images, AD_images, F_RL, W_RL = ultimate_evaluate_fid(args=args,
+                RL, LP, WG, F, AD, F_images, AD_images, F_RL = ultimate_evaluate_fid(args=args,
                                                                             model=model,
                                                                             test_loader=test_loader,
                                                                             prior_distribution=distribution_fn,
@@ -171,7 +171,6 @@ def main():
                 f.write(f" +) Fairness in images space (FI): {F_images}\n")
                 f.write(f" +) Averaging distance in images space (WI): {AD_images}\n")
                 f.write(f" +) Fairness of Reconstruction Loss (FRL): {F_RL}\n")
-                f.write(f" +) Averaging distance of Reconstruction Loss (WRL): {W_RL}\n")
                 f.write("\n")
 
 if __name__ == "__main__":

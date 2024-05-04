@@ -73,10 +73,10 @@ if __name__ == "__main__":
         SEED = ["seed_42"]
         LR = ["lr_0.001"]
         FSW = [f"fsw_{FSW_value}"]
-        # METHOD = ["EFBSW", "FBSW", "lowerboundFBSW", "OBSW_0.1","OBSW", "OBSW_10.0", "BSW"]
-        # METHOD_NAME = ["es-MFSWB", "us-MFSWB", "s-MFSWB", "MFSWB $\lambda = 0.1$", "MFSWB $\lambda = 1.0$", "MFSWB $\lambda = 10.0$", "USWB"]
-        METHOD = ["None"]
-        METHOD_NAME = ["None"]
+        METHOD = ["EFBSW", "FBSW", "lowerboundFBSW", "OBSW_0.1","OBSW", "OBSW_10.0", "BSW"]
+        METHOD_NAME = ["es-MFSWB", "us-MFSWB", "s-MFSWB", "MFSWB $\lambda = 0.1$", "MFSWB $\lambda = 1.0$", "MFSWB $\lambda = 10.0$", "USWB"]
+        # METHOD = ["None"]
+        # METHOD_NAME = ["None"]
         
         num_data = 100000
         
@@ -125,11 +125,7 @@ if __name__ == "__main__":
 
                                 assert len(set(RL_values)) == 1
                                 print(F_latent_list[-num_data:])
-                                res_method_latex += " & {:.3f}".format(RL_values[-2]) + "& {:.3f}".format(FRL_list[-2]) + "& {:.3f}".format(mean_LP) + "& {:.3f}".format(mean_F_latent) + "& {:.3f}".format(mean_W_latent) + " & {:.3f}".format(mean_WG) + "& {:.3f}".format(mean_F_image) + "& {:.3f}".format(mean_W_image)
-                                    # " & {:.3f}".format(big_dick["latent"][CKP][f][res_method_latex]["F"]) + \
-                                    # " & {:.3f}".format(big_dick["latent"][CKP][f][res_method_latex]["W"]) + \
-                                    # " & {:.3f}".format(big_dick["image"][CKP][f][res_method_latex]["F"]) + \
-                                    # " & {:.3f}".format(big_dick["image"][CKP][f][res_method_latex]["W"])                  
+                                res_method_latex += " & {:.3f}".format(RL_values[-2]) + "& {:.3f}".format(FRL_list[-2]) + "& {:.3f}".format(mean_LP) + "& {:.3f}".format(mean_F_latent) + "& {:.3f}".format(mean_W_latent) + " & {:.3f}".format(mean_WG) + "& {:.3f}".format(mean_F_image) + "& {:.3f}".format(mean_W_image)           
                             
                             res_method_latex += "\\\\"
                             res_method_latex += "\n"
