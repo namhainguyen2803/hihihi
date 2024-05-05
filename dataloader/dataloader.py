@@ -62,7 +62,7 @@ class MNISTLTDataLoader(BaseLTDataLoader):
                                     transform=transforms.Compose([
                                         transforms.ToTensor()
                                     ]))
-        test_set = ConcatDataset([train_set, test_set])
+        # test_set = ConcatDataset([train_set, test_set])
         self.train_dataset = train_set
         self.test_dataset = test_set
 

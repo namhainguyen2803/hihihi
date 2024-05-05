@@ -148,11 +148,19 @@ def main():
                 model.load_state_dict(torch.load(pretrained_model_path, map_location=torch.device('cpu')))
             else:
                 model.load_state_dict(torch.load(pretrained_model_path, map_location=torch.device('cpu')))
-            RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
-                                                                        model=model,
-                                                                        test_loader=test_loader,
-                                                                        prior_distribution=distribution_fn,
-                                                                        device=device)
+            
+            if args.dataset == "mnist":
+                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluation(args=args,
+                                                                            model=model,
+                                                                            test_loader=test_loader,
+                                                                            prior_distribution=distribution_fn,
+                                                                            device=device)
+            else:
+                RL, LP, WG, F, AD, F_images, AD_images = ultimate_evaluate_fid(args=args,
+                                                                            model=model,
+                                                                            test_loader=test_loader,
+                                                                            prior_distribution=distribution_fn,
+                                                                            device=device)
             with open(output_file, 'a') as f:
                 f.write(f"Evaluating pretrained model: {pretrained_model_path}:\n")
                 f.write(f" +) Reconstruction loss (RL): {RL}\n")

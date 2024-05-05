@@ -117,71 +117,39 @@ def main():
         "OBSW": "MFSWB $\lambda = 1.0$",
         "OBSW_10.0": "MFSWB $\lambda = 10.0$",
         "BSW": "USWB",
-        "None": "SWAE"
+        "None": "None"
     }
+    
+    for x_test, y_test in test_loader:
+        real_images = x_test
+        label = y_test
+        break
+    R = 8
+    C = 8
+    image_path = f"plotted_images/{args.dataset}/seed_{args.seed}"
+    os.makedirs(image_path, exist_ok=True)
+    real_image_path = image_path + "/real_images.pdf"
+    display_and_save_images(images=real_images, title="Ground truth", save_path=real_image_path, rows=R, cols=C)
+    print(real_images.shape)
+    image_path = os.path.join(image_path, f"fsw_{args.weight_fsw}")
     
     with torch.no_grad():
         for epoch in checkpoint_periods:
+
+            method_image_path = os.path.join(image_path, f"{args.method}")
+            method_image_path = os.path.join(method_image_path, f"epoch_{epoch}")
+            os.makedirs(method_image_path, exist_ok=True)
             
             pretrained_model_path = f"{outdir_checkpoint}/epoch_{i}/model/{args.dataset}_{args.method}.pth"
-            print(model)
             model.load_state_dict(torch.load(pretrained_model_path, map_location=torch.device('cpu')))
+            decoded_images, encoded_images = model(real_images.to(device))
+            print(decoded_images.shape)
+            recon_image_path = method_image_path + f"/recon.pdf"
+            display_and_save_images(images=decoded_images, title=METHOD_NAME[args.method], save_path=recon_image_path, rows=R, cols=C)
             
-            test_encode, test_targets = list(), list()
-            for test_batch_idx, (x_test, y_test) in enumerate(test_loader, start=0):
-                decoded_images, encoded_images = model(x_test.to(device))
-                test_encode.append(encoded_images.detach())
-                test_targets.append(y_test)
-
-            test_encode, test_targets = torch.cat(test_encode), torch.cat(test_targets)
-            test_encode, test_targets = test_encode.cpu().numpy(), test_targets.cpu().numpy()
-            print(f"Shape of test dataset to plot: {test_encode.shape}, {test_targets.shape}")
-            
-            print('{}/test_latent.png'.format(f"{outdir_checkpoint}/epoch_{epoch}"))
-            
-            if args.dataset == "mnist":
-                plt.figure(figsize=(10, 10))
-                classes = np.unique(test_targets)
-                colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
-                for i, class_label in enumerate(classes):
-                    plt.scatter(test_encode[test_targets == class_label, 0],
-                                test_encode[test_targets == class_label, 1],
-                                c=[colors[i]],
-                                cmap=plt.cm.Spectral,
-                                label=class_label)
-                    
-                # plt.rc('text', usetex=True)
-                # plt.legend()
-                # title = f'{METHOD_NAME[args.method]}'
-                # plt.title(title, fontsize=20)
-                # plotted_dir = f"latentSpace/{args.dataset}/epoch_{args.checkpoint_period}/fsw_{args.weight_fsw}"
-                # os.makedirs(plotted_dir, exist_ok=True)
-                # plt.savefig('{}/epoch_{}_fsw_{}_method_{}.pdf'.format(plotted_dir, args.checkpoint_period, args.weight_fsw, args.method))
-
-                plt.axis("off")
-                plotted_path = f"plotted_images/{args.dataset}/seed_{args.seed}/fsw_{args.weight_fsw}/{args.method}/epoch_{args.checkpoint_period}"
-                plt.savefig('{}/epoch_{}_fsw_{}_method_{}.pdf'.format(plotted_path, args.checkpoint_period, args.weight_fsw, args.method))
-                plt.close()
-                
-            elif args.dataset == "cifar10":
-                tsne = TSNE(n_components=2, random_state=42)
-                tsne_result = tsne.fit_transform(test_encode)
-                classes = np.unique(test_targets)
-                colors = plt.cm.Spectral(np.linspace(0, 1, len(classes)))
-                plt.figure(figsize=(10, 10))
-                for i, class_label in enumerate(classes):
-                    plt.scatter(tsne_result[test_targets == class_label, 0],
-                                -tsne_result[test_targets == class_label, 1],
-                                c=[colors[i]],
-                                cmap=plt.cm.Spectral,
-                                label=class_label)
-                          
-                plt.rc('text', usetex=True)
-                plt.legend()
-                title = f'{METHOD_NAME[args.method]}'
-                plt.title(title, fontsize=20)
-                plt.savefig('{}/epoch_{}_fsw_{}_method_{}.png'.format(f"{outdir_checkpoint}/epoch_{epoch}", args.checkpoint_period, args.weight_fsw, args.method))
-                plt.close()
+            gen_image = generate_image(model=model, prior_distribution=distribution_fn, num_images=R*C,  device=device)
+            gen_image_path = method_image_path + f"/gen.pdf"
+            display_and_save_images(images=gen_image, title=METHOD_NAME[args.method], save_path=gen_image_path, rows=R, cols=C)
 
 if __name__ == "__main__":
     main()
