@@ -2,11 +2,9 @@ from pytorch_balanced_sampler import *
 from torchvision import datasets, transforms
 import torch
 from torch.utils.data import DataLoader
-from dataloader.longtailed import IMBALANCECIFAR10, IMBALANCEMNIST
-from torch.utils.data import ConcatDataset
 
 
-class BaseLTDataLoader:
+class BaseDataLoader:
     def __init__(self, data_dir="data/", train_batch_size=128, test_batch_size=64, num_classes=0):
         self.test_loader = None
         self.train_loader = None
@@ -42,61 +40,25 @@ class BaseLTDataLoader:
         return self.train_loader, self.test_loader
 
 
-class MNISTLTDataLoader(BaseLTDataLoader):
+class MNISTDataLoader(BaseDataLoader):
     def __init__(self, data_dir="data/", train_batch_size=250, test_batch_size=250):
-        super(MNISTLTDataLoader, self).__init__(data_dir=data_dir,
-                                                train_batch_size=train_batch_size,
-                                                test_batch_size=test_batch_size,
-                                                num_classes=10)
+        super(MNISTDataLoader, self).__init__(data_dir=data_dir,
+                                              train_batch_size=train_batch_size,
+                                              test_batch_size=test_batch_size,
+                                              num_classes=10)
 
     def create_dataset(self):
         train_set = datasets.MNIST(root=self.data_dir,
-                                    train=True,
-                                    download=True,
-                                    transform=transforms.Compose([
-                                        transforms.ToTensor()
-                                    ]))
+                                   train=True,
+                                   download=True,
+                                   transform=transforms.Compose([
+                                       transforms.ToTensor()
+                                   ]))
         test_set = datasets.MNIST(root=self.data_dir,
-                                    train=False,
-                                    download=True,
-                                    transform=transforms.Compose([
-                                        transforms.ToTensor()
-                                    ]))
-        # test_set = ConcatDataset([train_set, test_set])
-        self.train_dataset = train_set
-        self.test_dataset = test_set
-
-
-class CIFAR10LTDataLoader(BaseLTDataLoader):
-    def __init__(self, data_dir="data/", train_batch_size=64, test_batch_size=64):
-        super(CIFAR10LTDataLoader, self).__init__(data_dir=data_dir,
-                                                  train_batch_size=train_batch_size,
-                                                  test_batch_size=test_batch_size,
-                                                  num_classes=10)
-
-    def create_dataset(self):
-        train_set = IMBALANCECIFAR10(root=self.data_dir,
-                                     imb_type='exp', imb_factor=1.0,
-                                     train=True, download=True,
-                                     transform=transforms.Compose([
-                                         transforms.RandomCrop(32, padding=4),
-                                         transforms.RandomHorizontalFlip(),
-                                         transforms.ToTensor(),
-                                     ]))
-
-        test_set_1 = datasets.CIFAR10(root=self.data_dir,
-                                      train=True,
-                                      download=True,
-                                      transform=transforms.Compose([
-                                          transforms.ToTensor()
-                                      ]))
-        test_set_2 = datasets.CIFAR10(root=self.data_dir,
-                                      train=False,
-                                      download=True,
-                                      transform=transforms.Compose([
-                                          transforms.ToTensor()
-                                      ]))
-        test_set = ConcatDataset([test_set_1, test_set_2])
-
+                                  train=False,
+                                  download=True,
+                                  transform=transforms.Compose([
+                                      transforms.ToTensor()
+                                  ]))
         self.train_dataset = train_set
         self.test_dataset = test_set

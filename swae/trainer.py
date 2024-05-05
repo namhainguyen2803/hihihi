@@ -109,7 +109,7 @@ class SWAEBatchTrainer:
             fsw = BSW_list(Xs=list_z_posterior, X=z_prior, L=self.num_projections_, device=self._device)
 
         elif self.method == "OBSW":
-            fsw = OBSW(Xs=list_z_posterior,X=z_posterior,L=self.num_projections_,lam=self.lambda_obsw,device=self._device)
+            fsw = OBSW(Xs=list_z_posterior, X=z_posterior, L=self.num_projections_, lam=self.lambda_obsw, device=self._device)
         else:
             fsw = 0
 

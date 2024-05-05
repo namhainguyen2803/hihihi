@@ -1,22 +1,56 @@
-#!/bin/bash
-# Define methods
-methods=(EFBSW FBSW lowerboundFBSW BSW None)
+weight_fsw_values=(1.0)
+methods=(EFBSW FBSW lowerboundFBSW OBSW BSW)
+obsw_weights=(0.1 1.0 10.0)
 
-# Loop through each method
-for method in "${methods[@]}"; do
-    CUDA_VISIBLE_DEVICES=2 python3 train.py \
-        --lr 0.0005 \
-        --epochs 500 \
-        --batch-size 1000 \
-        --batch-size-test 500 \
-        --log-epoch-interval 20 \
-        --dataset mnist \
-        --datadir data \
-        --outdir result \
-        --optimizer adam \
-        --weight_swd 8 \
-        --weight_fsw 0.3 \
-        --method "$method" \
-        --store-best False \
-        --store-end True
+python3 train.py \
+  --dataset mnist \
+  --num-classes 10 \
+  --datadir data \
+  --outdir result \
+  --distribution circle \
+  --optimizer rmsprop \
+  --lr 0.001 \
+  --alpha 0.9 \
+  --batch-size 1000 \
+  --batch-size-test 128 \
+  --seed 42 \
+  --weight_fsw 0.0 \
+  --method None
+
+for weight_fsw in "${weight_fsw_values[@]}"; do
+
+    for method in "${methods[@]}"; do
+        python3 train.py \
+            --dataset mnist \
+            --num-classes 10 \
+            --datadir data \
+            --outdir result \
+            --distribution circle \
+            --optimizer rmsprop \
+            --lr 0.001 \
+            --alpha 0.9 \
+            --batch-size 1000 \
+            --batch-size-test 128 \
+            --seed 42 \
+            --weight_fsw "$weight_fsw" \
+            --method "$method"
+    done
+
+    for lmbd in "${obsw_weights[@]}"; do
+        python3 train.py \
+            --dataset mnist \
+            --num-classes 10 \
+            --datadir data \
+            --outdir result \
+            --distribution circle \
+            --optimizer rmsprop \
+            --lr 0.001 \
+            --alpha 0.9 \
+            --batch-size 1000 \
+            --batch-size-test 128 \
+            --seed 42 \
+            --weight_fsw "$weight_fsw" \
+            --method OBSW \
+            --lambda-obsw "$lmbd"
+    done
 done

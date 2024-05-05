@@ -1,9 +1,5 @@
 from metrics.wasserstein import *
 import matplotlib.pyplot as plt
-import os
-import numpy as np
-from PIL import Image
-import zipfile
 
 
 def generate_image(model,
@@ -49,61 +45,3 @@ def plot_convergence(iterations, data, ylabel, title, filename):
     plt.grid(True)
     plt.savefig(filename)
     plt.close()
-
-
-def create_compression_file(images, sample_path):
-    # sample_path = recreate_folder(sample_path)
-    if check_range_sigmoid(images):
-        # images = images.permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
-        images = (images * 255).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu', torch.uint8).numpy()
-        np.savez(sample_path, images)
-        return sample_path
-    else:
-        raise ValueError('images must be in range [0, 1]')
-
-
-def make_jpg_images(tensor, output_folder):
-    os.makedirs(output_folder, exist_ok=True)
-    # If the folder exists, get the highest image index
-    existing_images = [f for f in os.listdir(output_folder) if f.endswith('.jpg')]
-    if existing_images:
-        last_image_index = max([int(f.split('_')[-1].split('.')[0]) for f in existing_images])
-    else:
-        last_image_index = -1
-
-    # Convert the tensor elements to PIL Images and save them
-    for i in range(len(tensor)):
-        image_array = np.uint8(tensor[i].to("cpu").numpy() * 255)  # Rescale pixel values to [0, 255]
-        image = Image.fromarray(np.transpose(image_array, (1, 2, 0)))  # Convert to PIL Image
-        # Save the image to the output folder with a unique filename
-        image_path = os.path.join(output_folder, f'image_{last_image_index + i + 1}.jpg')
-        image.save(image_path)
-
-    return output_folder
-
-
-def zip_images(directory, zip_filename):
-    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(directory):
-            for file in files:
-                if file.endswith('.jpg'):
-                    file_path = os.path.join(root, file)
-                    zipf.write(file_path, os.path.relpath(file_path, directory))
-
-
-def check_range_sigmoid(tensor):
-    return (tensor >= 0).all() and (tensor <= 1).all()
-
-def display_and_save_images(images, title=None, save_path=None, rows=5, cols=5):
-    fig, axs = plt.subplots(rows, cols, figsize=(5, 5), facecolor='black')
-    for i in range(rows):
-        for j in range(cols):
-            ax = axs[i, j]
-            img = images[i * cols + j].cpu().numpy().squeeze()
-            ax.imshow(img, cmap='gray')
-            ax.axis('off')
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, bbox_inches='tight', pad_inches=0, facecolor='black')
-    else:
-        plt.show()
