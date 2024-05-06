@@ -1,17 +1,11 @@
 import argparse
 import matplotlib as mpl
-
 mpl.use('Agg')
-from sklearn.manifold import TSNE
-
 from swae.models.cifar10 import CIFAR10Autoencoder
 from swae.models.mnist import MNISTAutoencoder
 from swae.trainer import SWAEBatchTrainer
 from swae.distributions import rand_cirlce2d, rand_ring2d, rand_uniform2d, rand, randn
-
 from evaluate.eval_ws import *
-from evaluate.eval_fid import *
-
 import torch.optim as optim
 import torchvision.utils as vutils
 from dataloader.dataloader import *

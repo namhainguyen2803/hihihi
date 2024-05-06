@@ -150,17 +150,18 @@ def main():
                                 cmap=plt.cm.Spectral,
                                 label=class_label)
                     
-                # plt.rc('text', usetex=True)
-                # plt.legend()
-                # title = f'{METHOD_NAME[args.method]}'
-                # plt.title(title, fontsize=20)
-                # plotted_dir = f"latentSpace/{args.dataset}/epoch_{args.checkpoint_period}/fsw_{args.weight_fsw}"
-                # os.makedirs(plotted_dir, exist_ok=True)
-                # plt.savefig('{}/epoch_{}_fsw_{}_method_{}.pdf'.format(plotted_dir, args.checkpoint_period, args.weight_fsw, args.method))
+                plt.rc('text', usetex=True)
+                plt.legend()
+                title = f'{METHOD_NAME[args.method]}'
+                plt.title(title, fontsize=20)
+                plotted_dir = f"latentSpace/{args.dataset}/epoch_{args.checkpoint_period}/fsw_{args.weight_fsw}"
+                os.makedirs(plotted_dir, exist_ok=True)
+                plt.savefig('{}/epoch_{}_fsw_{}_method_{}.pdf'.format(plotted_dir, args.checkpoint_period, args.weight_fsw, args.method))
 
-                plt.axis("off")
-                plotted_path = f"plotted_images/{args.dataset}/seed_{args.seed}/fsw_{args.weight_fsw}/{args.method}/epoch_{args.checkpoint_period}"
-                plt.savefig('{}/epoch_{}_fsw_{}_method_{}.pdf'.format(plotted_path, args.checkpoint_period, args.weight_fsw, args.method))
+                # plt.axis("off")
+                # plotted_path = f"plotted_images/{args.dataset}/seed_{args.seed}/fsw_{args.weight_fsw}/{args.method}/epoch_{args.checkpoint_period}"
+                # os.makedirs(plotted_path, exist_ok=True)
+                # plt.savefig('{}/epoch_{}_fsw_{}_method_{}.pdf'.format(plotted_path, args.checkpoint_period, args.weight_fsw, args.method))
                 plt.close()
                 
             elif args.dataset == "cifar10":
