@@ -27,7 +27,7 @@ def main():
                         help='input batch size for evaluating (default: 500)')
     parser.add_argument('--epochs', type=int, default=200, metavar='N',
                         help='number of epochs to train (default: 30)')
-    parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.0005)')
     parser.add_argument('--weight_swd', type=float, default=1,
                         help='weight of swd (default: 1)')
